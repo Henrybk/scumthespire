@@ -248,11 +248,11 @@ public class BattleAiController implements Controller {
             while (!bfs.isEmpty()) {
                 TurnNode node = bfs.pollFirst();
 
-                int playerDamage = ValueFunctions.getPlayerDamage(node);
+                int playerHealth = TurnNode.getTotalPlayerHealth(node);
                 int monsterHealth = TurnNode.getTotalMonsterHealth(node);
 
                 String nodeLabel = String
-                        .format("player damage:%d monster health:%d", playerDamage, monsterHealth);
+                        .format("player health:%d monster health:%d", playerHealth, monsterHealth);
 
 
                 double f = (double) node.turnLabel / 100.;

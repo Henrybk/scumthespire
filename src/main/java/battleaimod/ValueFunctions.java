@@ -185,54 +185,55 @@ public class ValueFunctions {
         put(CultistPotion.POTION_ID, 30);
     }};
 
-    /**
-     * Adds up monster health and accounts for powers that alter the effective health of the enemy
-     * such as barricade and unawakened.
-     */
-    public static int getTotalMonsterHealth(SaveState saveState) {
-        return saveState.curMapNodeState.monsterData.stream()
-                                                    .map(monster -> {
-                                                        if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Barricade"))) {
-                                                            return monster.currentHealth + monster.currentBlock;
-                                                            
-                                                        } else if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Unawakened"))) {
-                                                            return monster.currentHealth + monster.maxHealth;
-                                                        }
-                                                        
-                                                        return monster.currentHealth;
-                                                    })
-                                                    .reduce(0, Integer::sum);
-    }
-
     public static int caclculateTurnScore(TurnNode turnNode) {
         
-        int playerDamage = getPlayerDamage(turnNode);
+        int playerHealth = turnNode.startingState.saveState.playerState.getCurrentHealth();
         
         // Maybe change the score value of each hp point based on if we have healing and max hp?
         int healthMultiplier = 10;
-        int playerDamageScore = playerDamage * -1 * healthMultiplier;
-        
-        int monsterDamage = ValueFunctions.getTotalMonsterHealth(turnNode.controller.startingState) -
-                            ValueFunctions.getTotalMonsterHealth(turnNode.startingState.saveState);
+        int playerCurrentHealthScore = playerHealth * healthMultiplier;
+		
+        int playerMaxHealthScore = turnNode.startingState.saveState.playerState.maxHealth * 4 * healthMultiplier;
 
         int powerScore = turnNode.startingState.saveState.playerState.powers.stream()
-                                                                            .map(powerState -> POWER_VALUES .getOrDefault(powerState.powerId, 0) * powerState.amount)
-                                                                            .reduce(0, Integer::sum);
+            .map(powerState -> POWER_VALUES .getOrDefault(powerState.powerId, 0) * powerState.amount)
+            .reduce(0, Integer::sum);
         
         int monster_count = 0;
+		int monster_total_health = 0;
         int poison_count = 0;
-        for (MonsterState mon : turnNode.startingState.saveState.curMapNodeState.monsterData) {
-            if (!mon.isDying && !mon.isEscaping && !mon.halfDead && mon.currentHealth >= 1) {
-                monster_count++;
-                
-                Optional<PowerState> powerPoison = mon.powers.stream().filter(powerState -> powerState.powerId.equals("Poison")).findAny();
+        for (MonsterState monster : turnNode.startingState.saveState.curMapNodeState.monsterData) {
+			int count_add = 0;
+			
+            if (!monster.isDying && !monster.isEscaping && !monster.halfDead && monster.currentHealth >= 1) {
+                count_add = 1;
+                monster_total_health += monster.currentHealth;
+				
+				if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Barricade"))) {
+					if (monster.currentBlock >= 1) {
+						monster_total_health += monster.currentBlock;
+					}
+				}
+				
+                Optional<PowerState> powerPoison = monster.powers.stream().filter(powerState -> powerState.powerId.equals("Poison")).findAny();
                 if (powerPoison.isPresent()) {
-                    poison_count += Math.max(mon.currentHealth, powerPoison.get().amount);
+                    poison_count += Math.max(monster.currentHealth, powerPoison.get().amount);
                 }
-                
             }
+			
+			if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Unawakened"))) {
+				count_add = 1;
+                monster_total_health += monster.maxHealth;
+			}
+			
+			if (count_add == 1) {
+				monster_count++;
+			}
         }
         int poisonScore = poison_count;
+		
+		turnNode.monsterTotalHealth = monster_total_health;
+		int monsterHealthScore = monster_total_health * -1;
         
         // add score for enemy debuffs (consider Paper krane and Odd mushroom)
         // remove score for enemy buffs
@@ -489,7 +490,7 @@ public class ValueFunctions {
 
         int ritualDaggerScore = totalRitualDaggerDamage * 2 * healthMultiplier;
         int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * 2 * healthMultiplier;
-        int feedScore = numFeeds * 4 + turnNode.startingState.saveState.playerState.maxHealth * 8 * healthMultiplier;
+        int feedScore = numFeeds * 4;
         int lessonLearnedScore = numLessonLearned * 10 + turnNode.startingState.saveState.lessonLearnedCount * 20 * healthMultiplier;
         
         // Maybe value gold more based on Courier/Membership card/Smiling mask?
@@ -519,8 +520,9 @@ public class ValueFunctions {
                GeneticAlgorithmScore +
                miracleScore +
                goldScore +
-               monsterDamage +
-               playerDamageScore +
+               monsterHealthScore +
+               playerCurrentHealthScore +
+			   playerMaxHealthScore +
                potionScore +
                relicScore +
                additonalHeuristicScore;
@@ -587,12 +589,13 @@ public class ValueFunctions {
             }
         }
         
-        int playerDamageScore = StateNode.getPlayerDamage(node) * -1;
+        // Maybe change the score value of each hp point based on if we have healing and max hp?
+        int playerCurrentHealthScore = node.saveState.playerState.getCurrentHealth();
+        int playerMaxHealthScore = node.saveState.playerState.maxHealth * 4;
 
         int ritualDaggerScore = totalRitualDaggerDamage;
         int GeneticAlgorithmScore = totalGeneticAlgorithmBlock;
         int lessonLearnedScore = node.saveState.lessonLearnedCount * 10;
-        int feedScore = node.saveState.playerState.maxHealth * 4;
         
         int goldScore =  node.saveState.playerState.gold * 2;
         
@@ -604,19 +607,15 @@ public class ValueFunctions {
                         .map(function -> function
                                 .apply(node.saveState)).mapToInt(Integer::intValue).sum();
         
-        return feedScore +
-               ritualDaggerScore +
+        return ritualDaggerScore +
                GeneticAlgorithmScore +
                lessonLearnedScore +
                goldScore +
-               playerDamageScore +
+               playerCurrentHealthScore +
+			   playerMaxHealthScore +
                potionScore +
                relicScore +
                additonalHeuristicScore;
-    }
-
-    public static int getPlayerDamage(TurnNode turnNode) {
-        return StateNode.getPlayerDamage(turnNode.startingState);
     }
 
     public static int getPotionScore(SaveState saveState) {

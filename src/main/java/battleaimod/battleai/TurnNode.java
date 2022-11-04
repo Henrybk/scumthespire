@@ -34,6 +34,7 @@ public class TurnNode implements Comparable<TurnNode> {
 
     static int nodeIndex = 0;
 
+	public int monsterTotalHealth = 0;
 
     public TurnNode(StateNode statenode, BattleAiController controller, TurnNode parent) {
         startingState = statenode;
@@ -159,17 +160,17 @@ public class TurnNode implements Comparable<TurnNode> {
 
     @Override
     public String toString() {
-        int monsterDamage = ValueFunctions
-                .getTotalMonsterHealth(controller.startingState) - ValueFunctions
-                .getTotalMonsterHealth(startingState.saveState);
-
         return String
-                .format("hp:%03d ehp:%03d (%03d) turn:%02d score:%4d", ValueFunctions
-                        .getPlayerDamage(this), getTotalMonsterHealth(this), monsterDamage, startingState.saveState.turn, getTurnScore(this));
+                .format("hp:%03d ehp:%03d turn:%02d score:%4d",
+				    getTotalPlayerHealth(this), getTotalMonsterHealth(this), startingState.saveState.turn, getTurnScore(this));
+    }
+
+    public static int getTotalPlayerHealth(TurnNode turnNode) {
+        return turnNode.startingState.saveState.playerState.getCurrentHealth();
     }
 
     public static int getTotalMonsterHealth(TurnNode turnNode) {
-        return ValueFunctions.getTotalMonsterHealth(turnNode.startingState.saveState);
+        return turnNode.monsterTotalHealth;
     }
 
 
