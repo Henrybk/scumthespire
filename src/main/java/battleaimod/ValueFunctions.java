@@ -12,20 +12,13 @@ import com.megacrit.cardcrawl.cards.curses.*;
 import com.megacrit.cardcrawl.cards.tempCards.*;
 import com.megacrit.cardcrawl.cards.colorless.*;
 
-import com.megacrit.cardcrawl.core.AbstractCreature;
-import com.megacrit.cardcrawl.characters.AbstractPlayer;
-import com.megacrit.cardcrawl.monsters.AbstractMonster;
 import com.megacrit.cardcrawl.monsters.exordium.*;
 
 import com.megacrit.cardcrawl.powers.*;
 import com.megacrit.cardcrawl.powers.watcher.*;
 
 import com.megacrit.cardcrawl.relics.*;
-
-import com.megacrit.cardcrawl.helpers.PotionHelper;
 import com.megacrit.cardcrawl.potions.*;
-
-import com.megacrit.cardcrawl.orbs.*;
 
 import savestate.orbs.*;
 import savestate.CardState;
@@ -37,12 +30,7 @@ import savestate.powers.PowerState;
 import savestate.monsters.MonsterState;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ValueFunctions {
 
@@ -146,14 +134,14 @@ public class ValueFunctions {
     public static final HashMap<String, Integer> POTION_VALUES = new HashMap<String, Integer>() {{
         // Just play fruit juice
         put(FruitJuice.POTION_ID, 30);
-		
+        
         put(Ambrosia.POTION_ID, 100);
         put(AncientPotion.POTION_ID, 20);
         put(AttackPotion.POTION_ID, 20);
         put(BlessingOfTheForge.POTION_ID, 20);
         put(BlockPotion.POTION_ID, 110);
         put(BloodPotion.POTION_ID, 120);
-		
+        
         put(BottledMiracle.POTION_ID, 60);
         put(ColorlessPotion.POTION_ID, 20);
         put(CunningPotion.POTION_ID, 40);
@@ -168,28 +156,28 @@ public class ValueFunctions {
         put(FearPotion.POTION_ID, 20);
         put(FirePotion.POTION_ID, 30);
         put(FocusPotion.POTION_ID, 60);
-		
+        
         put(EntropicBrew.POTION_ID, 300);
         put(FairyPotion.POTION_ID, 300);
         put(GhostInAJar.POTION_ID, 200);
         put(RegenPotion.POTION_ID, 100);
 
-		
+        
         put(HeartOfIron.POTION_ID, 48);
         put(LiquidBronze.POTION_ID, 20);
         put(LiquidMemories.POTION_ID, 30);
         put(PoisonPotion.POTION_ID, 20);
         put(PotionOfCapacity.POTION_ID, 30);
         put(PowerPotion.POTION_ID, 50);
-		
+        
         put(SneckoOil.POTION_ID, 75);
         put(SwiftPotion.POTION_ID, 40);
-		
+        
         put(SpeedPotion.POTION_ID, 75);
         put(SteroidPotion.POTION_ID, 21);
-		
+        
         put(WeakenPotion.POTION_ID, 50);
-		
+        
         put(StancePotion.POTION_ID, 0);
         put(SmokeBomb.POTION_ID, 0);
         put(Elixir.POTION_ID, 20);
@@ -204,48 +192,44 @@ public class ValueFunctions {
     public static int getTotalMonsterHealth(SaveState saveState) {
         return saveState.curMapNodeState.monsterData.stream()
                                                     .map(monster -> {
-                                                        if (monster.powers.stream()
-                                                                          .anyMatch(power -> power.powerId
-                                                                                  .equals("Barricade"))) {
+                                                        if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Barricade"))) {
                                                             return monster.currentHealth + monster.currentBlock;
-                                                        } else if (monster.powers.stream()
-                                                                                 .anyMatch(power -> power.powerId
-                                                                                         .equals("Unawakened"))) {
+                                                            
+                                                        } else if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Unawakened"))) {
                                                             return monster.currentHealth + monster.maxHealth;
                                                         }
+                                                        
                                                         return monster.currentHealth;
                                                     })
-                                                    .reduce(Integer::sum)
-                                                    .get();
+                                                    .reduce(0, Integer::sum);
     }
 
     public static int caclculateTurnScore(TurnNode turnNode) {
         
         int playerDamage = getPlayerDamage(turnNode);
-		
+        
         // Maybe change the score value of each hp point based on if we have healing and max hp?
-		int healthMultiplier = 10;
+        int healthMultiplier = 10;
         int playerDamageScore = playerDamage * -1 * healthMultiplier;
         
         int monsterDamage = ValueFunctions.getTotalMonsterHealth(turnNode.controller.startingState) -
                             ValueFunctions.getTotalMonsterHealth(turnNode.startingState.saveState);
 
         int powerScore = turnNode.startingState.saveState.playerState.powers.stream()
-                                                                            .map(powerState -> POWER_VALUES
-                                                                                    .getOrDefault(powerState.powerId, 0) * powerState.amount)
-                                                                            .reduce(Integer::sum)
-                                                                            .orElse(0);
+                                                                            .map(powerState -> POWER_VALUES .getOrDefault(powerState.powerId, 0) * powerState.amount)
+                                                                            .reduce(0, Integer::sum);
         
         int monster_count = 0;
         int poison_count = 0;
         for (MonsterState mon : turnNode.startingState.saveState.curMapNodeState.monsterData) {
-            if (!mon.isDying && !mon.isEscaping) {
-                // halfDead?
+            if (!mon.isDying && !mon.isEscaping && !mon.halfDead && mon.currentHealth >= 1) {
+                monster_count++;
+                
                 Optional<PowerState> powerPoison = mon.powers.stream().filter(powerState -> powerState.powerId.equals("Poison")).findAny();
                 if (powerPoison.isPresent()) {
                     poison_count += Math.max(mon.currentHealth, powerPoison.get().amount);
                 }
-                monster_count++;
+                
             }
         }
         int poisonScore = poison_count;
@@ -277,7 +261,7 @@ public class ValueFunctions {
         int expungerDamage = 0;
         int numCatalysts = 0;
         int totalGeneticAlgorithmBlock = 0;
-		int totalClawExtraDamage = 0;
+        int totalClawExtraDamage = 0;
 
         for (CardState card : turnNode.startingState.saveState.playerState.hand) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
@@ -288,11 +272,11 @@ public class ValueFunctions {
                     totalGeneticAlgorithmBlock += card.baseBlock;
                     break;
                 case Claw.ID:
-					if (card.upgraded) {
-						totalClawExtraDamage += card.baseDamage - 5;
-					} else {
-						totalClawExtraDamage += card.baseDamage - 3;
-					}
+                    if (card.upgraded) {
+                        totalClawExtraDamage += Math.min(0, card.baseDamage - 5);
+                    } else {
+                        totalClawExtraDamage += Math.min(0, card.baseDamage - 3);
+                    }
                     break;
                 case Miracle.ID:
                     numMiracles++;
@@ -323,11 +307,11 @@ public class ValueFunctions {
                     totalGeneticAlgorithmBlock += card.baseBlock;
                     break;
                 case Claw.ID:
-					if (card.upgraded) {
-						totalClawExtraDamage += card.baseDamage - 5;
-					} else {
-						totalClawExtraDamage += card.baseDamage - 3;
-					}
+                    if (card.upgraded) {
+                        totalClawExtraDamage += Math.min(0, card.baseDamage - 5);
+                    } else {
+                        totalClawExtraDamage += Math.min(0, card.baseDamage - 3);
+                    }
                     break;
                 case Feed.ID:
                     numFeeds++;
@@ -355,11 +339,11 @@ public class ValueFunctions {
                     totalGeneticAlgorithmBlock += card.baseBlock;
                     break;
                 case Claw.ID:
-					if (card.upgraded) {
-						totalClawExtraDamage += card.baseDamage - 5;
-					} else {
-						totalClawExtraDamage += card.baseDamage - 3;
-					}
+                    if (card.upgraded) {
+                        totalClawExtraDamage += Math.min(0, card.baseDamage - 5);
+                    } else {
+                        totalClawExtraDamage += Math.min(0, card.baseDamage - 3);
+                    }
                     break;
                 case Feed.ID:
                     numFeeds++;
@@ -421,50 +405,46 @@ public class ValueFunctions {
         }
 
         int orbScore = 0;
-        int iOrb = 0;
-        for (OrbState orb : turnNode.startingState.saveState.playerState.orbs) {
-			int current_orbScore = 0;
+        for (int iOrb = 0; iOrb < turnNode.startingState.saveState.playerState.orbs.size(); iOrb++) {
+            OrbState orb = turnNode.startingState.saveState.playerState.orbs.get(iOrb);
+            int current_orbScore = 0;
+            
             if (orb instanceof LightningOrbState) {
                 // Add score based on lightning orb damage
                 current_orbScore += orb.passiveAmount;
-				
+                
                 // If electrodynamics then multiply lightning orb damage by monster count
                 if (electro == 1) {
                     current_orbScore *= monster_count;
                 }
-            }
-			
-            if (orb instanceof FrostOrbState) {
+                
+            } else if (orb instanceof FrostOrbState) {
                 // Add score based on frost orb block
                 current_orbScore += orb.passiveAmount;
-            }
-			
-            if (orb instanceof DarkOrbState) {
+                
+            } else if (orb instanceof DarkOrbState) {
                 // Add score based on dark orb damage
                 current_orbScore += orb.evokeAmount;
-            }
-			
-            if (orb instanceof PlasmaOrbState) {
+                
+            } else if (orb instanceof PlasmaOrbState) {
                 // Add score for plasma orb
                 current_orbScore += 5;
             }
-			
-            // if Loop then multiply first orb value
-            // does this actually always work for orb(0)?
-            if (iOrb == 0) {
-                current_orbScore *= loop;
-            }
-			
-			if (orb instanceof EmptyOrbSlotState || current_orbScore == 0) {
+            
+            if (orb instanceof EmptyOrbSlotState || current_orbScore == 0) {
                 // If orb slot is empty remove all score added by it (this makes capacitor unplayable when you have no orbs, not the best approach)
                 current_orbScore -= 5;
+            
+            // if Loop then multiply first orb value
+            // does this actually always work for orb(0)?
+            } else if (iOrb == 0) {
+                current_orbScore *= loop;
             }
-			
-			orbScore += current_orbScore;
-            // Add gold plated cables here
+            
+            orbScore += current_orbScore;
+            // Add gold-plated cables here
             // Add Frozen core somewhere around here
-			// Add Emotion Chip somewhere around here
-            iOrb++;
+            // Add Emotion Chip somewhere around here
         }
         
         // if Ice cream = add score for energy?
@@ -503,7 +483,7 @@ public class ValueFunctions {
         
         // Base Fumes power score in the amount of enemies?
         
-        // Add score for stances (or maybe change power scores based on instances? (eg. Like water for when you are in calm))?
+        // Add score for stances (or maybe change power scores based on instances? (e.g. Like water for when you are in calm))?
         
         // Maybe something to add score when reducing cards cost? (Madness/Mummyhand/Enlightenment/Setup/)
 
@@ -517,8 +497,8 @@ public class ValueFunctions {
 
         int potionScore = getPotionScore(turnNode.startingState.saveState);
         
-        // Gotta add lots of relics to this function
-        int relicScore = getRelicScoreEnd(turnNode.startingState.saveState);
+        // I've got to add lots of relics to this function
+        int relicScore = getRelicScoreDuring(turnNode.startingState.saveState);
 
         int additonalHeuristicScore =
                 BattleAiMod.additionalValueFunctions.stream()
@@ -528,7 +508,7 @@ public class ValueFunctions {
         return numOrbScore +
                orbScore +
                poisonScore +
-			   clawScore +
+               clawScore +
                catalystScore +
                parasiteScore +
                lessonLearnedScore +
@@ -641,24 +621,23 @@ public class ValueFunctions {
 
     public static int getPotionScore(SaveState saveState) {
         return saveState.playerState.potions.stream().map(potionState -> {
-            if (potionState.potionId.equals("Potion Slot") || !POTION_VALUES
-                    .containsKey(potionState.potionId)) {
+            if (potionState.potionId.equals("Potion Slot") || !POTION_VALUES.containsKey(potionState.potionId) || PotionState.UNPLAYABLE_POTIONS.contains(potionState.potionId)) {
                 return 0;
             }
             return POTION_VALUES.get(potionState.potionId);
-        }).reduce(Integer::sum).get();
+        }).reduce(0, Integer::sum);
     }
 
     public static int getRelicScoreEnd(SaveState saveState) {
         int relicScore = 0;
         
         Optional<RelicState> relicLizardTail = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(LizardTail.ID) && relic.counter != -2).findAny();
-		if (relicLizardTail.isPresent()) {
+        if (relicLizardTail.isPresent()) {
             relicScore += 400;
         }
-		
+        
         Optional<RelicState> relicOmamori = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Omamori.ID)).findAny();
-		if (relicOmamori.isPresent()) {
+        if (relicOmamori.isPresent()) {
             relicScore += relicOmamori.get().counter * 100;
         }
         
@@ -678,22 +657,22 @@ public class ValueFunctions {
         int relicScore = 0;
         
         Optional<RelicState> relicLizardTail = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(LizardTail.ID) && relic.counter != -2).findAny();
-		if (relicLizardTail.isPresent()) {
+        if (relicLizardTail.isPresent()) {
             relicScore += 400;
         }
-		
+        
         Optional<RelicState> relicOmamori = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Omamori.ID)).findAny();
-		if (relicOmamori.isPresent()) {
+        if (relicOmamori.isPresent()) {
             relicScore += relicOmamori.get().counter * 100;
         }
-		
+        
         Optional<RelicState> relicKunai = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Kunai.ID)).findAny();
-		if (relicKunai.isPresent()) {
+        if (relicKunai.isPresent()) {
             relicScore += relicKunai.get().counter * 3;
         }
-		
+        
         Optional<RelicState> relicShuriken = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Shuriken.ID)).findAny();
-		if (relicShuriken.isPresent()) {
+        if (relicShuriken.isPresent()) {
             relicScore += relicShuriken.get().counter * 3;
         }
         
