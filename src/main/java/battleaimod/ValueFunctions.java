@@ -75,28 +75,28 @@ public class ValueFunctions {
         put(BiasPower.POWER_ID, -5);
         put(NoBlockPower.POWER_ID, -10);
         
-        put(MagnetismPower.POWER_ID, 2);
-        put(MayhemPower.POWER_ID, 3);
-        put(PanachePower.POWER_ID, 3);
-        put(SadisticPower.POWER_ID, 3);
+        put(MagnetismPower.POWER_ID, 5);
+        put(MayhemPower.POWER_ID, 10);
+        put(PanachePower.POWER_ID, 10);
+        put(SadisticPower.POWER_ID, 10);
         //put(TheBombPower.POWER_ID, 3);
         
-        put(DarkEmbracePower.POWER_ID, 4);
-        put(FeelNoPainPower.POWER_ID, 5);
-        put(DemonFormPower.POWER_ID, 6);
-        put(FireBreathingPower.POWER_ID, 2);
-        put(CombustPower.POWER_ID, 2);
-        put(EvolvePower.POWER_ID, 16);
-        put(MetallicizePower.POWER_ID, 3);
-        put(RupturePower.POWER_ID, 3);
-        put(BarricadePower.POWER_ID, 10);
+        put(DarkEmbracePower.POWER_ID, 20);
+        put(FeelNoPainPower.POWER_ID, 20);
+        put(DemonFormPower.POWER_ID, 30);
+        put(FireBreathingPower.POWER_ID, 5);
+        put(CombustPower.POWER_ID, 5);
+        put(EvolvePower.POWER_ID, 20);
+        put(MetallicizePower.POWER_ID, 15);
+        put(RupturePower.POWER_ID, 5);
+        put(BarricadePower.POWER_ID, 20);
         put(BerserkPower.POWER_ID, 10);
-        put(CorruptionPower.POWER_ID, 20);
-        put(JuggernautPower.POWER_ID, 3);
-        put(BrutalityPower.POWER_ID, 3);
-        put(DoubleTapPower.POWER_ID, 2);
-        put(FlameBarrierPower.POWER_ID, 1);
-        put(NextTurnBlockPower.POWER_ID, 1);
+        put(CorruptionPower.POWER_ID, 30);
+        put(JuggernautPower.POWER_ID, 20);
+        put(BrutalityPower.POWER_ID, 10);
+        put(DoubleTapPower.POWER_ID, 3);
+        put(FlameBarrierPower.POWER_ID, 3);
+        put(NextTurnBlockPower.POWER_ID, 3);
         put(RagePower.POWER_ID, 3);
 
         put(AccuracyPower.POWER_ID, 10);
@@ -111,20 +111,20 @@ public class ValueFunctions {
         put(NightmarePower.POWER_ID, 10);
         put(PhantasmalPower.POWER_ID, 10);
         
-        put(FocusPower.POWER_ID, 3);
+        put(FocusPower.POWER_ID, 10);
         put(EchoPower.POWER_ID, 40);
-        put(EquilibriumPower.POWER_ID, 2);
+        put(EquilibriumPower.POWER_ID, 3);
         put(HeatsinkPower.POWER_ID, 3);
-        put(LoopPower.POWER_ID, 3);
+        put(LoopPower.POWER_ID, 10);
         put(HelloPower.POWER_ID, 1);
         put(StaticDischargePower.POWER_ID, 3);
         put(StormPower.POWER_ID, 3);
-        put(BufferPower.POWER_ID, 20);
-        put(CreativeAIPower.POWER_ID, 20);
-        put(ElectroPower.POWER_ID, 30);
+        put(BufferPower.POWER_ID, 30);
+        put(CreativeAIPower.POWER_ID, 30);
+        put(ElectroPower.POWER_ID, 50);
         put(DrawPower.POWER_ID, 3);
-        put(AmplifyPower.POWER_ID, 2);
-        put(RepairPower.POWER_ID, 1);
+        put(AmplifyPower.POWER_ID, 5);
+        put(RepairPower.POWER_ID, 5);
         
         put(DevaPower.POWER_ID, 20);
         put(EstablishmentPower.POWER_ID, 3);
@@ -138,55 +138,63 @@ public class ValueFunctions {
         put(CollectPower.POWER_ID, 3);
         put(BattleHymnPower.POWER_ID, 1);
         put(FreeAttackPower.POWER_ID, 2);
-        put(OmegaPower.POWER_ID, 3);
+        put(OmegaPower.POWER_ID, 40);
         put(WaveOfTheHandPower.POWER_ID, 3);
         put(WrathNextTurnPower.POWER_ID, 3);
     }};
 
     public static final HashMap<String, Integer> POTION_VALUES = new HashMap<String, Integer>() {{
+        // Just play fruit juice
+        put(FruitJuice.POTION_ID, 30);
+		
         put(Ambrosia.POTION_ID, 100);
         put(AncientPotion.POTION_ID, 20);
-        put(AttackPotion.POTION_ID, 15);
+        put(AttackPotion.POTION_ID, 20);
         put(BlessingOfTheForge.POTION_ID, 20);
-        put(BlockPotion.POTION_ID, 60);
+        put(BlockPotion.POTION_ID, 110);
         put(BloodPotion.POTION_ID, 120);
+		
         put(BottledMiracle.POTION_ID, 60);
-        put(ColorlessPotion.POTION_ID, 15);
-        put(CultistPotion.POTION_ID, 30);
+        put(ColorlessPotion.POTION_ID, 20);
         put(CunningPotion.POTION_ID, 40);
-        put(DexterityPotion.POTION_ID, 12);
+        put(StrengthPotion.POTION_ID, 30);
+        put(DexterityPotion.POTION_ID, 30);
         put(DistilledChaosPotion.POTION_ID, 40);
-        put(DuplicationPotion.POTION_ID, 50);
-        put(Elixir.POTION_ID, 20);
+        put(DuplicationPotion.POTION_ID, 100);
         put(EnergyPotion.POTION_ID, 60);
-        put(EntropicBrew.POTION_ID, 240);
         put(EssenceOfDarkness.POTION_ID, 60);
         put(EssenceOfSteel.POTION_ID, 60);
         put(ExplosivePotion.POTION_ID, 40);
-        put(FairyPotion.POTION_ID, 100);
         put(FearPotion.POTION_ID, 20);
-        put(FirePotion.POTION_ID, 40);
+        put(FirePotion.POTION_ID, 30);
         put(FocusPotion.POTION_ID, 60);
+		
+        put(EntropicBrew.POTION_ID, 300);
+        put(FairyPotion.POTION_ID, 300);
+        put(GhostInAJar.POTION_ID, 200);
+        put(RegenPotion.POTION_ID, 100);
 
-        // Just play fruit juice
-        put(FruitJuice.POTION_ID, 30);
-        put(GamblersBrew.POTION_ID, 500);
-        put(GhostInAJar.POTION_ID, 80);
+		
         put(HeartOfIron.POTION_ID, 48);
         put(LiquidBronze.POTION_ID, 20);
         put(LiquidMemories.POTION_ID, 30);
         put(PoisonPotion.POTION_ID, 20);
         put(PotionOfCapacity.POTION_ID, 30);
-        put(SmokeBomb.POTION_ID, 0);
         put(PowerPotion.POTION_ID, 50);
-        put(RegenPotion.POTION_ID, 64);
+		
         put(SneckoOil.POTION_ID, 75);
-        put(SpeedPotion.POTION_ID, 75);
-        put(StancePotion.POTION_ID, 0);
-        put(SteroidPotion.POTION_ID, 21);
-        put(StrengthPotion.POTION_ID, 40);
         put(SwiftPotion.POTION_ID, 40);
+		
+        put(SpeedPotion.POTION_ID, 75);
+        put(SteroidPotion.POTION_ID, 21);
+		
         put(WeakenPotion.POTION_ID, 50);
+		
+        put(StancePotion.POTION_ID, 0);
+        put(SmokeBomb.POTION_ID, 0);
+        put(Elixir.POTION_ID, 20);
+        put(GamblersBrew.POTION_ID, 500);
+        put(CultistPotion.POTION_ID, 30);
     }};
 
     /**
@@ -215,6 +223,7 @@ public class ValueFunctions {
         
         int playerDamage = getPlayerDamage(turnNode);
 		
+        // Maybe change the score value of each hp point based on if we have healing and max hp?
 		int healthMultiplier = 10;
         int playerDamageScore = playerDamage * -1 * healthMultiplier;
         
@@ -237,7 +246,6 @@ public class ValueFunctions {
                     poison_count += Math.max(mon.currentHealth, powerPoison.get().amount);
                 }
                 monster_count++;
-                
             }
         }
         int poisonScore = poison_count;
@@ -375,13 +383,6 @@ public class ValueFunctions {
         // Add score for each orb slot, or remove 1000 score when you have 0 orb slots
         int numOrbScore = numOrb == 0 ? -1000 : numOrb * 5;
         
-        // Check for Focus
-        int focus = 0;
-        Optional<PowerState> powerFocus = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Focus")).findAny();
-        if (powerFocus.isPresent()) {
-            focus += powerFocus.get().amount;
-        }
-        
         // Check for Loop
         int loop = 1;
         Optional<PowerState> powerLoop = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Loop")).findAny();
@@ -402,13 +403,12 @@ public class ValueFunctions {
 			int current_orbScore = 0;
             if (orb instanceof LightningOrbState) {
                 // Add score based on lightning orb damage
-                int lightScore = orb.passiveAmount;
+                current_orbScore += orb.passiveAmount;
 				
                 // If electrodynamics then multiply lightning orb damage by monster count
                 if (electro == 1) {
-                    lightScore *= monster_count;
+                    current_orbScore *= monster_count;
                 }
-                current_orbScore += lightScore;
             }
 			
             if (orb instanceof FrostOrbState) {
@@ -440,6 +440,7 @@ public class ValueFunctions {
 			orbScore += current_orbScore;
             // Add gold plated cables here
             // Add Frozen core somewhere around here
+			// Add Emotion Chip somewhere around here
             iOrb++;
         }
         
@@ -463,11 +464,9 @@ public class ValueFunctions {
         
         // If you have spirit shield in hand add score for hand size?
         
-        // Maybe the dark orb score should be based on its current evoke damage instead of focus
+        // If you have barrage in hand add score based on channeled orbs?
         
-        // If you have barrage in hand add score based on channeled robs?
-        
-        // If you have Stack in hand add score based on discrd pile size?
+        // If you have Stack in hand add score based on discard pile size?
         
         // If you have aggregate in hand add score based on draw pile size?
         
@@ -477,15 +476,13 @@ public class ValueFunctions {
         
         // If you have Body slam in hand add score based on current block?
         
-        // If you have Chash in hand add score when you have only attacks in hand?
+        // If you have Clash in hand add score when you have only attacks in hand?
         
         // Base Fumes power score in the amount of enemies?
         
         // Add score for stances (or maybe change power scores based on instances? (eg. Like water for when you are in calm))?
         
         // Maybe something to add score when reducing cards cost? (Madness/Mummyhand/Enlightenment/Setup/)
-        
-        // Maybe change the value of each hp point based on if we have healing, our max hp and coffe dripper?
 
         int ritualDaggerScore = totalRitualDaggerDamage * 2 * healthMultiplier;
         int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * 2 * healthMultiplier;
