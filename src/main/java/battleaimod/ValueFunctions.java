@@ -277,6 +277,7 @@ public class ValueFunctions {
         int expungerDamage = 0;
         int numCatalysts = 0;
         int totalGeneticAlgorithmBlock = 0;
+		int totalClawExtraDamage = 0;
 
         for (CardState card : turnNode.startingState.saveState.playerState.hand) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
@@ -285,6 +286,13 @@ public class ValueFunctions {
                     break;
                 case GeneticAlgorithm.ID:
                     totalGeneticAlgorithmBlock += card.baseBlock;
+                    break;
+                case Claw.ID:
+					if (card.upgraded) {
+						totalClawExtraDamage += card.baseDamage - 5;
+					} else {
+						totalClawExtraDamage += card.baseDamage - 3;
+					}
                     break;
                 case Miracle.ID:
                     numMiracles++;
@@ -314,6 +322,13 @@ public class ValueFunctions {
                 case GeneticAlgorithm.ID:
                     totalGeneticAlgorithmBlock += card.baseBlock;
                     break;
+                case Claw.ID:
+					if (card.upgraded) {
+						totalClawExtraDamage += card.baseDamage - 5;
+					} else {
+						totalClawExtraDamage += card.baseDamage - 3;
+					}
+                    break;
                 case Feed.ID:
                     numFeeds++;
                     break;
@@ -338,6 +353,13 @@ public class ValueFunctions {
                     break;
                 case GeneticAlgorithm.ID:
                     totalGeneticAlgorithmBlock += card.baseBlock;
+                    break;
+                case Claw.ID:
+					if (card.upgraded) {
+						totalClawExtraDamage += card.baseDamage - 5;
+					} else {
+						totalClawExtraDamage += card.baseDamage - 3;
+					}
                     break;
                 case Feed.ID:
                     numFeeds++;
@@ -372,6 +394,7 @@ public class ValueFunctions {
         int miracleScore = numMiracles * 2 * healthMultiplier;
         int expungerScore = expungerDamage;
         int catalystScore = numCatalysts * 2 * healthMultiplier;
+        int clawScore = totalClawExtraDamage;
         // Maybe add score for Alchemize (when no Sozu), Wish (when no Ectoplasm) and limit brake ??
         // Base catalyst score on current enemy poison and limit brake score in current player strengh?
         
@@ -505,6 +528,7 @@ public class ValueFunctions {
         return numOrbScore +
                orbScore +
                poisonScore +
+			   clawScore +
                catalystScore +
                parasiteScore +
                lessonLearnedScore +
@@ -628,17 +652,20 @@ public class ValueFunctions {
     public static int getRelicScoreEnd(SaveState saveState) {
         int relicScore = 0;
         
-        Optional<RelicState> optionalLizardTail = saveState.playerState.relics.stream()
-                                                                              .filter(relic -> relic.relicId
-                                                                                      .equals(LizardTail.ID) && relic.counter != -2)
-                                                                              .findAny();
-        relicScore += optionalLizardTail.isPresent() ? 400 : 0;
+        Optional<RelicState> relicLizardTail = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(LizardTail.ID) && relic.counter != -2).findAny();
+		if (relicLizardTail.isPresent()) {
+            relicScore += 400;
+        }
+		
+        Optional<RelicState> relicOmamori = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Omamori.ID)).findAny();
+		if (relicOmamori.isPresent()) {
+            relicScore += relicOmamori.get().counter * 100;
+        }
         
         // pennib
         // nunchaku
         // inkbottle
         // flower
-        // Omomori
         // sundial
         // incense
         
@@ -650,18 +677,29 @@ public class ValueFunctions {
     public static int getRelicScoreDuring(SaveState saveState) {
         int relicScore = 0;
         
-        Optional<RelicState> optionalLizardTail = saveState.playerState.relics.stream()
-                                                                              .filter(relic -> relic.relicId
-                                                                                      .equals(LizardTail.ID) && relic.counter != -2)
-                                                                              .findAny();
-        relicScore += optionalLizardTail.isPresent() ? 400 : 0;
+        Optional<RelicState> relicLizardTail = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(LizardTail.ID) && relic.counter != -2).findAny();
+		if (relicLizardTail.isPresent()) {
+            relicScore += 400;
+        }
+		
+        Optional<RelicState> relicOmamori = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Omamori.ID)).findAny();
+		if (relicOmamori.isPresent()) {
+            relicScore += relicOmamori.get().counter * 100;
+        }
+		
+        Optional<RelicState> relicKunai = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Kunai.ID)).findAny();
+		if (relicKunai.isPresent()) {
+            relicScore += relicKunai.get().counter * 3;
+        }
+		
+        Optional<RelicState> relicShuriken = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Shuriken.ID)).findAny();
+		if (relicShuriken.isPresent()) {
+            relicScore += relicShuriken.get().counter * 3;
+        }
         
         // pennib
         // nunchaku
         // inkbottle
-        // kunai
-        // shuriken
-        // Omomori
         // fan
         // letter
         // sundial
