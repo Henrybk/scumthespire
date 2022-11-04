@@ -47,27 +47,27 @@ import java.util.List;
 public class ValueFunctions {
 
     public static final HashMap<String, Integer> POWER_VALUES = new HashMap<String, Integer>() {{
-        put(StrengthPower.POWER_ID, 3);
-        put(DexterityPower.POWER_ID, 3);
-        put(IntangiblePlayerPower.POWER_ID, 15);
-        put(ArtifactPower.POWER_ID, 5);
-        put(MantraPower.POWER_ID, 1);
-        put(DrawCardNextTurnPower.POWER_ID, 2);
-        put(EnergizedBluePower.POWER_ID, 2);
-        put(EnergizedPower.POWER_ID, 2);
-        put(PlatedArmorPower.POWER_ID, 3);
-        put(RitualPower.POWER_ID, 2);
-        put(ThornsPower.POWER_ID, 3);
+        put(StrengthPower.POWER_ID, 10);
+        put(DexterityPower.POWER_ID, 10);
+        put(IntangiblePlayerPower.POWER_ID, 30);
+        put(ArtifactPower.POWER_ID, 20);
+        put(MantraPower.POWER_ID, 5);
+        put(DrawCardNextTurnPower.POWER_ID, 5);
+        put(EnergizedBluePower.POWER_ID, 5);
+        put(EnergizedPower.POWER_ID, 5);
+        put(PlatedArmorPower.POWER_ID, 10);
+        put(RitualPower.POWER_ID, 20);
+        put(ThornsPower.POWER_ID, 5);
         put(VigorPower.POWER_ID, 1);
         
-        put(FrailPower.POWER_ID, -5);
-        put(WeakPower.POWER_ID, -5);
-        put(VulnerablePower.POWER_ID, -5);
-        put(HexPower.POWER_ID, -10);
-        put(WraithFormPower.POWER_ID, -10);
+        put(FrailPower.POWER_ID, -10);
+        put(WeakPower.POWER_ID, -10);
+        put(VulnerablePower.POWER_ID, -10);
+        put(HexPower.POWER_ID, -30);
+        put(WraithFormPower.POWER_ID, -30);
         put(DrawReductionPower.POWER_ID, -10);
-        put(LoseDexterityPower.POWER_ID, -2);
-        put(LoseStrengthPower.POWER_ID, -2);
+        put(LoseDexterityPower.POWER_ID, -5);
+        put(LoseStrengthPower.POWER_ID, -5);
         put(ConstrictedPower.POWER_ID, -10);
         put(EntanglePower.POWER_ID, -10);
         put(NoDrawPower.POWER_ID, -10);
@@ -99,17 +99,17 @@ public class ValueFunctions {
         put(NextTurnBlockPower.POWER_ID, 1);
         put(RagePower.POWER_ID, 3);
 
-        put(AccuracyPower.POWER_ID, 3);
-        put(BlurPower.POWER_ID, 3);
-        put(NoxiousFumesPower.POWER_ID, 10);
-        put(InfiniteBladesPower.POWER_ID, 1);
-        put(ThousandCutsPower.POWER_ID, 3);
-        put(AfterImagePower.POWER_ID, 10);
-        put(ToolsOfTheTradePower.POWER_ID, 3);
+        put(AccuracyPower.POWER_ID, 10);
+        put(BlurPower.POWER_ID, 10);
+        put(NoxiousFumesPower.POWER_ID, 30);
+        put(InfiniteBladesPower.POWER_ID, 3);
+        put(ThousandCutsPower.POWER_ID, 20);
+        put(AfterImagePower.POWER_ID, 30);
+        put(ToolsOfTheTradePower.POWER_ID, 20);
         put(BurstPower.POWER_ID, 10);
-        put(EnvenomPower.POWER_ID, 5);
-        put(NightmarePower.POWER_ID, 1);
-        put(PhantasmalPower.POWER_ID, 3);
+        put(EnvenomPower.POWER_ID, 20);
+        put(NightmarePower.POWER_ID, 10);
+        put(PhantasmalPower.POWER_ID, 10);
         
         put(FocusPower.POWER_ID, 3);
         put(EchoPower.POWER_ID, 40);
@@ -214,6 +214,9 @@ public class ValueFunctions {
     public static int caclculateTurnScore(TurnNode turnNode) {
         
         int playerDamage = getPlayerDamage(turnNode);
+		
+		int healthMultiplier = 10;
+        int playerDamageScore = playerDamage * -1 * healthMultiplier;
         
         int monsterDamage = ValueFunctions.getTotalMonsterHealth(turnNode.controller.startingState) -
                             ValueFunctions.getTotalMonsterHealth(turnNode.startingState.saveState);
@@ -231,7 +234,7 @@ public class ValueFunctions {
                 // halfDead?
                 Optional<PowerState> powerPoison = mon.powers.stream().filter(powerState -> powerState.powerId.equals("Poison")).findAny();
                 if (powerPoison.isPresent()) {
-                    poison_count += powerPoison.get().amount;
+                    poison_count += Math.max(mon.currentHealth, powerPoison.get().amount);
                 }
                 monster_count++;
                 
@@ -358,9 +361,9 @@ public class ValueFunctions {
             }
         }
         
-        int miracleScore = numMiracles * 2;
+        int miracleScore = numMiracles * 2 * healthMultiplier;
         int expungerScore = expungerDamage;
-        int catalystScore = numCatalysts * 2;
+        int catalystScore = numCatalysts * 2 * healthMultiplier;
         // Maybe add score for Alchemize (when no Sozu), Wish (when no Ectoplasm) and limit brake ??
         // Base catalyst score on current enemy poison and limit brake score in current player strengh?
         
@@ -395,37 +398,46 @@ public class ValueFunctions {
 
         int orbScore = 0;
         int iOrb = 0;
-        for (OrbState o : turnNode.startingState.saveState.playerState.orbs) {
-            if (o instanceof EmptyOrbSlotState) {
-                // If orb slot is empty remove all score added by it (this makes capacitor unplayable when you have no orbs, not the best approach)
-                orbScore -= 5;
-            }
-            if (o instanceof LightningOrbState) {
+        for (OrbState orb : turnNode.startingState.saveState.playerState.orbs) {
+			int current_orbScore = 0;
+            if (orb instanceof LightningOrbState) {
                 // Add score based on lightning orb damage
-                int lightScore = Math.min(0, 3 + focus);
+                int lightScore = orb.passiveAmount;
+				
                 // If electrodynamics then multiply lightning orb damage by monster count
                 if (electro == 1) {
                     lightScore *= monster_count;
                 }
-                orbScore += lightScore;
+                current_orbScore += lightScore;
             }
-            if (o instanceof FrostOrbState) {
+			
+            if (orb instanceof FrostOrbState) {
                 // Add score based on frost orb block
-                orbScore += Math.min(0, 2 + focus);
+                current_orbScore += orb.passiveAmount;
             }
-            if (o instanceof DarkOrbState) {
+			
+            if (orb instanceof DarkOrbState) {
                 // Add score based on dark orb damage
-                orbScore += Math.min(0, 5 + focus);
+                current_orbScore += orb.evokeAmount;
             }
-            if (o instanceof PlasmaOrbState) {
+			
+            if (orb instanceof PlasmaOrbState) {
                 // Add score for plasma orb
-                orbScore += 5;
+                current_orbScore += 5;
             }
+			
             // if Loop then multiply first orb value
             // does this actually always work for orb(0)?
             if (iOrb == 0) {
-                orbScore *= loop;
+                current_orbScore *= loop;
             }
+			
+			if (orb instanceof EmptyOrbSlotState || current_orbScore == 0) {
+                // If orb slot is empty remove all score added by it (this makes capacitor unplayable when you have no orbs, not the best approach)
+                current_orbScore -= 5;
+            }
+			
+			orbScore += current_orbScore;
             // Add gold plated cables here
             // Add Frozen core somewhere around here
             iOrb++;
@@ -474,15 +486,14 @@ public class ValueFunctions {
         // Maybe something to add score when reducing cards cost? (Madness/Mummyhand/Enlightenment/Setup/)
         
         // Maybe change the value of each hp point based on if we have healing, our max hp and coffe dripper?
-        int playerDamageScore = playerDamage * -1;
 
-        int ritualDaggerScore = totalRitualDaggerDamage * 2;
-        int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * 2;
-        int feedScore = numFeeds * 4 + turnNode.startingState.saveState.playerState.maxHealth * 8;
-        int lessonLearnedScore = numLessonLearned * 10 + turnNode.startingState.saveState.lessonLearnedCount * 20;
+        int ritualDaggerScore = totalRitualDaggerDamage * 2 * healthMultiplier;
+        int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * 2 * healthMultiplier;
+        int feedScore = numFeeds * 4 + turnNode.startingState.saveState.playerState.maxHealth * 8 * healthMultiplier;
+        int lessonLearnedScore = numLessonLearned * 10 + turnNode.startingState.saveState.lessonLearnedCount * 20 * healthMultiplier;
         
         // Maybe value gold more based on Courier/Membership card/Smiling mask?
-        int goldScore =  turnNode.startingState.saveState.playerState.gold * 4;
+        int goldScore =  turnNode.startingState.saveState.playerState.gold * 4 * healthMultiplier;
 
         int potionScore = getPotionScore(turnNode.startingState.saveState);
         
