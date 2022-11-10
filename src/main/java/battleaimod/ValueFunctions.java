@@ -284,16 +284,16 @@ public class ValueFunctions {
 		
 		// Can't heal with MarkOfTheBloom
 		// Don't count healing when facing heart
-		if (hasMarkOfTheBloom == 0 || turnNode.startingState.saveState.floorNum == 55) {
+		if (hasMarkOfTheBloom == 0 && turnNode.startingState.saveState.floorNum != 55) {
 			int has_MagicFlower = 0;
 			Optional<RelicState> relicMagicFlower = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MagicFlower.ID)).findAny();
 			if (relicMagicFlower.isPresent()) {
 				has_MagicFlower = 1;
 			}
 			
-			Optional<RelicState> relicFaceOfCleric = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(FaceOfCleric.ID)).findAny();
-			if (relicFaceOfCleric.isPresent()) {
-				if (has_MagicFlower == 1) {
+			if (has_MagicFlower == 1) {
+				Optional<RelicState> relicFaceOfCleric = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(FaceOfCleric.ID)).findAny();
+				if (relicFaceOfCleric.isPresent()) {
 					preview_guaranteed_healing += 1;
 				}
 			}
