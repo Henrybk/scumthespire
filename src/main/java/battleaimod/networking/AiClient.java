@@ -210,6 +210,8 @@ public class AiClient {
             return GridSelectConfrimCommand.INSTANCE;
         } else if (type.equals("CARD_REWARD_SELECT")) {
             return new CardRewardSelectCommand(commandString);
+        } else if (type.equals("CARD_REWARD_SKIP")) {
+            return CardRewardSkipCommand.INSTANCE;
         }
 
         return null;
@@ -233,6 +235,8 @@ public class AiClient {
             return HandSelectConfirmCommand.INSTANCE;
         } else if (type.equals("GRID_SELECT")) {
             return new GridSelectCommand(commandString);
+        } else if (type.equals("CARD_REWARD_SKIP")) {
+            return CardRewardSkipCommand.INSTANCE;
         }
 
         return null;
