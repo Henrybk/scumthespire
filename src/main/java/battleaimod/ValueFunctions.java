@@ -30,6 +30,7 @@ import savestate.MapRoomNodeState;
 import savestate.StateFactories;
 import savestate.relics.RelicState;
 import savestate.powers.PowerState;
+import savestate.powers.powerstates.common.TheBombPowerState;
 import savestate.monsters.MonsterState;
 
 import java.util.HashMap;
@@ -38,6 +39,23 @@ import java.util.Optional;
 import com.badlogic.gdx.math.MathUtils;
 
 public class ValueFunctions {
+	
+	public static int healthMultiplier = 10;
+	public static int previewHealingMultiplier = 5;
+	
+	public static int fightMultiplier = 2;
+	
+	public static int energyValue = 10;
+	public static int blockValue = 1;
+	
+	// How many health points in each of these worth
+	public static int goldValue = 2;
+	public static int maxHealthValue = 4;
+	public static int lessonLearnedValue = 10;
+	public static int ritualDaggerValue = 1; // For each point of damage increased
+	public static int GeneticAlgorithmValue = 1; // For each point of block increased
+	
+	
     public static final HashMap<String, Integer> POWER_VALUES = new HashMap<String, Integer>() {{
         put(StrengthPower.POWER_ID, 10);
         put(DexterityPower.POWER_ID, 10);
@@ -143,11 +161,11 @@ public class ValueFunctions {
         put(BlessingOfTheForge.POTION_ID, 20);
 		
         put(BlockPotion.POTION_ID, 110);
-        put(BloodPotion.POTION_ID, 150); // Todo: Should be based on max health
+        put(BloodPotion.POTION_ID, 1);
         put(RegenPotion.POTION_ID, 100);
         put(GhostInAJar.POTION_ID, 200);
 		
-        put(FairyPotion.POTION_ID, 300); // Todo: Should be based on max health
+        put(FairyPotion.POTION_ID, 1);
         put(EntropicBrew.POTION_ID, 300); // Todo: Should be based on total/empty potion slots
         put(EssenceOfDarkness.POTION_ID, 60); // Todo: Should be based on max orbs
         put(EnergyPotion.POTION_ID, 60);
@@ -190,21 +208,21 @@ public class ValueFunctions {
         put(WeakenPotion.POTION_ID, 50);
         
 		// Currently removed
-        put(LiquidMemories.POTION_ID, 0);
-        put(StancePotion.POTION_ID, 0);
-        put(SmokeBomb.POTION_ID, 0);
-        put(Elixir.POTION_ID, 0);
-        put(GamblersBrew.POTION_ID, 0);
-        put(CultistPotion.POTION_ID, 0);
+        //put(LiquidMemories.POTION_ID, -1000);
+        //put(StancePotion.POTION_ID, -1000);
+        //put(SmokeBomb.POTION_ID, -1000);
+        //put(Elixir.POTION_ID, -1000);
+        //put(GamblersBrew.POTION_ID, -1000);
+        //put(CultistPotion.POTION_ID, -1000);
     }};
 
     public static final HashMap<String, Integer> POTION_BARK_VALUES = new HashMap<String, Integer>() {{
         put(BlockPotion.POTION_ID, 210);
-        put(BloodPotion.POTION_ID, 290); // Todo: Should be based on max health
+        //put(BloodPotion.POTION_ID, 290);
         put(RegenPotion.POTION_ID, 200);
         put(GhostInAJar.POTION_ID, 370);
 		
-        put(FairyPotion.POTION_ID, 400); // Todo: Should be based on max health
+        //put(FairyPotion.POTION_ID, 400);
         put(EssenceOfDarkness.POTION_ID, 120); // Todo: Should be based on max orbs
         put(EnergyPotion.POTION_ID, 120);
         put(DistilledChaosPotion.POTION_ID, 80);
@@ -247,154 +265,166 @@ public class ValueFunctions {
     }};
 
     public static int caclculateTurnScore(TurnNode turnNode) {
-        
-        int playerHealth = turnNode.startingState.saveState.playerState.getCurrentHealth();
-		int playerMaxHealth = turnNode.startingState.saveState.playerState.maxHealth;
 		
+		SaveState saveState = turnNode.startingState.saveState;
+		
+		int totalMultiplier = healthMultiplier * fightMultiplier;
+        
+        int playerHealth = saveState.playerState.getCurrentHealth();
+		int playerMaxHealth = saveState.playerState.maxHealth;
 		int playerMissingHealth = playerMaxHealth - playerHealth;
 		
-		int preview_guaranteed_healing = 0;
-		
-		int has_Ectoplasm = 0;
-		Optional<RelicState> relicEctoplasm = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Ectoplasm.ID)).findAny();
+		int hasEctoplasm = 0;
+		Optional<RelicState> relicEctoplasm = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Ectoplasm.ID)).findAny();
         if (relicEctoplasm.isPresent()) {
-            has_Ectoplasm = 1;
+            hasEctoplasm = 1;
         }
 		
 		int hasMarkOfTheBloom = 0;
-		Optional<RelicState> relicMarkOfTheBloom = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MarkOfTheBloom.ID)).findAny();
+		Optional<RelicState> relicMarkOfTheBloom = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MarkOfTheBloom.ID)).findAny();
         if (relicMarkOfTheBloom.isPresent()) {
             hasMarkOfTheBloom = 1;
         }
 		
 		int fightHasRewards = 0;
-		if (turnNode.startingState.saveState.curMapNodeState.rewardAllowed) {
+		if (saveState.curMapNodeState.rewardAllowed) {
 			fightHasRewards = 1;
 		}
 		int isBoss = 0;
 		int isLastBoss = 0;
-		if (turnNode.startingState.saveState.curMapNodeState.roomType == MapRoomNodeState.RoomType.BOSS) {
+		if (saveState.curMapNodeState.roomType == MapRoomNodeState.RoomType.BOSS) {
 			isBoss = 1;
-			if (turnNode.startingState.saveState.ascensionLevel < 20 || AbstractDungeon.bossList.size() != 2) {
+			if (saveState.ascensionLevel < 20 || AbstractDungeon.bossList.size() != 2) {
 				isLastBoss = 1;
 			} else {
 				fightHasRewards = 0;
 			}
 		}
 		
+		int previewHealing = 0;
+		
 		// Can't heal with MarkOfTheBloom
 		// Don't count healing when facing heart
-		if (hasMarkOfTheBloom == 0 && turnNode.startingState.saveState.floorNum != 55) {
-			int has_MagicFlower = 0;
-			Optional<RelicState> relicMagicFlower = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MagicFlower.ID)).findAny();
+		if (hasMarkOfTheBloom == 0 && saveState.floorNum != 55) {
+			int hasMagicFlower = 0;
+			Optional<RelicState> relicMagicFlower = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MagicFlower.ID)).findAny();
 			if (relicMagicFlower.isPresent()) {
-				has_MagicFlower = 1;
+				hasMagicFlower = 1;
 			}
 			
-			if (has_MagicFlower == 1) {
-				Optional<RelicState> relicFaceOfCleric = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(FaceOfCleric.ID)).findAny();
+			if (hasMagicFlower == 1) {
+				Optional<RelicState> relicFaceOfCleric = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(FaceOfCleric.ID)).findAny();
 				if (relicFaceOfCleric.isPresent()) {
-					preview_guaranteed_healing += 1;
+					previewHealing += 1;
 				}
 			}
 
-			Optional<RelicState> relicBurningBlood = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BurningBlood.ID)).findAny();
+			Optional<RelicState> relicBurningBlood = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BurningBlood.ID)).findAny();
 			if (relicBurningBlood.isPresent()) {
-				if (has_MagicFlower == 1) {
-					preview_guaranteed_healing += 9;
+				if (hasMagicFlower == 1) {
+					previewHealing += 9;
 				} else {
-					preview_guaranteed_healing += 6;
+					previewHealing += 6;
 				}
 			}
 
-			Optional<RelicState> relicBlackBlood = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BlackBlood.ID)).findAny();
+			Optional<RelicState> relicBlackBlood = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BlackBlood.ID)).findAny();
 			if (relicBlackBlood.isPresent()) {
-				if (has_MagicFlower == 1) {
-					preview_guaranteed_healing += 18;
+				if (hasMagicFlower == 1) {
+					previewHealing += 18;
 				} else {
-					preview_guaranteed_healing += 12;
+					previewHealing += 12;
 				}
 			}
 			
-			Optional<RelicState> relicMeatOnTheBone = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MeatOnTheBone.ID)).findAny();
+			Optional<RelicState> relicMeatOnTheBone = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MeatOnTheBone.ID)).findAny();
 			if (relicMeatOnTheBone.isPresent() && playerHealth <= playerMaxHealth / 2.0F) {
-				if (has_MagicFlower == 1) {
-					preview_guaranteed_healing += 18;
+				if (hasMagicFlower == 1) {
+					previewHealing += 18;
 				} else {
-					preview_guaranteed_healing += 12;
+					previewHealing += 12;
 				}
 			}
 			
-			Optional<PowerState> powerRepair = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Repair")).findAny();
+			Optional<PowerState> powerRepair = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Repair")).findAny();
 			if (powerRepair.isPresent()) {
-				if (has_MagicFlower == 1) {
-					preview_guaranteed_healing += MathUtils.round(powerRepair.get().amount * 1.5F);
+				if (hasMagicFlower == 1) {
+					previewHealing += MathUtils.round(powerRepair.get().amount * 1.5F);
 				} else {
-					preview_guaranteed_healing += powerRepair.get().amount;
+					previewHealing += powerRepair.get().amount;
 				}
 			}
 			
-			Optional<RelicState> relicBloodVial = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BloodVial.ID)).findAny();
+			Optional<RelicState> relicBloodVial = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BloodVial.ID)).findAny();
 			if (relicBloodVial.isPresent()) {
-				if (has_MagicFlower == 1) {
-					preview_guaranteed_healing += 3;
+				if (hasMagicFlower == 1) {
+					previewHealing += 3;
 				} else {
-					preview_guaranteed_healing += 2;
+					previewHealing += 2;
 				}
 			}
 			
 			if (fightHasRewards == 1) {
-				Optional<RelicState> relicBloodyIdol = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BloodyIdol.ID)).findAny();
-				if (relicBloodyIdol.isPresent() && has_Ectoplasm == 0) {
-					preview_guaranteed_healing += 5;
-					Optional<RelicState> relicMawBank = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MawBank.ID)).findAny();
+				Optional<RelicState> relicBloodyIdol = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(BloodyIdol.ID)).findAny();
+				if (relicBloodyIdol.isPresent() && hasEctoplasm == 0) {
+					previewHealing += 5;
+					Optional<RelicState> relicMawBank = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MawBank.ID)).findAny();
 					if (relicMawBank.isPresent() && relicMawBank.get().counter != -2) {
-						preview_guaranteed_healing += 5;
+						previewHealing += 5;
 					}
 				}
 			}
 			
-			int still_missing_health = 0;
-			if (preview_guaranteed_healing >= playerMissingHealth) {
-				preview_guaranteed_healing = playerMissingHealth;
+			int stillMissingHealth = 0;
+			if (previewHealing >= playerMissingHealth) {
+				previewHealing = playerMissingHealth;
 			} else {
-				still_missing_health = (playerMissingHealth - preview_guaranteed_healing);
+				stillMissingHealth = (playerMissingHealth - previewHealing);
 			}
 			
 			// Post-boss heal
-			if (still_missing_health > 0 && isLastBoss == 1) {
-				if (turnNode.startingState.saveState.ascensionLevel >= 5) {
-					preview_guaranteed_healing += MathUtils.round(still_missing_health * 0.75F);
+			if (stillMissingHealth > 0 && isLastBoss == 1) {
+				if (saveState.ascensionLevel >= 5) {
+					previewHealing += MathUtils.round(stillMissingHealth * 0.75F);
 				} else {
-					preview_guaranteed_healing += playerMaxHealth;
+					previewHealing += playerMaxHealth;
 				}
 				
-				if (preview_guaranteed_healing >= playerMissingHealth) {
-					preview_guaranteed_healing = playerMissingHealth;
+				if (previewHealing >= playerMissingHealth) {
+					previewHealing = playerMissingHealth;
 				}
 			}
 		}
 		
 		// Idea: Preview possible healing? bandages, bites, reaper, bird faced urn
 		
-		int fightMultiplier = 2;
-        int healthMultiplier = 10;
-		
-		int energyValue = 5;
 		
         // Idea: Maybe change the score value of each hp point based on max hp?
-        int playerCurrentHealthScore = playerHealth;
+        int playerCurrentHealthScore = playerHealth * healthMultiplier;
 		
-		if (preview_guaranteed_healing > 0) {
-			playerCurrentHealthScore += preview_guaranteed_healing;
+		int previewHealingScore = previewHealing * previewHealingMultiplier;
+		
+        int playerMaxHealthScore = playerMaxHealth * maxHealthValue * totalMultiplier;
+		
+        int bombDamage = 0;
+		int bombInstances = 0;
+		int powerScore = 0;
+		for (int iPower = 0; iPower < saveState.playerState.powers.size(); iPower++) {
+            PowerState power = saveState.playerState.powers.get(iPower);
+			
+			if (POWER_VALUES.containsKey(power.powerId)) {
+                powerScore += POWER_VALUES.get(power.powerId) * power.amount;
+				
+            } else if (power.powerId.equals(TheBombPower.POWER_ID)) {
+				TheBombPowerState bombpower = (TheBombPowerState) power;
+				
+				powerScore += (int)(bombpower.damage * 0.2F);
+				if (bombpower.amount == 1) {
+					bombInstances++;
+					bombDamage += bombpower.damage;
+				}
+			}
 		}
-        playerCurrentHealthScore *= healthMultiplier;
-		
-        int playerMaxHealthScore = playerMaxHealth * 4 * fightMultiplier * healthMultiplier;
-
-        int powerScore = turnNode.startingState.saveState.playerState.powers.stream()
-            .map(powerState -> POWER_VALUES .getOrDefault(powerState.powerId, 0) * powerState.amount)
-            .reduce(0, Integer::sum);
         
         int totalRitualDaggerDamage = 0;
         int numFeeds = 0;
@@ -409,7 +439,7 @@ public class ValueFunctions {
         // Idea: add score for rampage scaling
         // Idea: maybe add score for pressure points scaling?
 
-        for (CardState card : turnNode.startingState.saveState.playerState.hand) {
+        for (CardState card : saveState.playerState.hand) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -444,7 +474,7 @@ public class ValueFunctions {
             }
         }
 
-        for (CardState card : turnNode.startingState.saveState.playerState.drawPile) {
+        for (CardState card : saveState.playerState.drawPile) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -476,7 +506,7 @@ public class ValueFunctions {
             }
         }
 
-        for (CardState card : turnNode.startingState.saveState.playerState.discardPile) {
+        for (CardState card : saveState.playerState.discardPile) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -508,7 +538,7 @@ public class ValueFunctions {
             }
         }
 
-        for (CardState card : turnNode.startingState.saveState.playerState.exhaustPile) {
+        for (CardState card : saveState.playerState.exhaustPile) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -529,228 +559,297 @@ public class ValueFunctions {
         // Idea: Base catalyst score on current enemy poison and limit brake score in current player strengh?
         
         
-        int parasiteScore = turnNode.startingState.saveState.parasiteCount * -100;
+        int parasiteScore = saveState.parasiteCount * -100;
 
-        int numOrb = turnNode.startingState.saveState.playerState.maxOrbs;
+        int numOrb = saveState.playerState.maxOrbs;
         
         // Add score for each orb slot, or remove 1000 score when you have 0 orb slots
         int numOrbScore = numOrb == 0 ? -1000 : numOrb * 5;
         
         // Check for Loop
-        int loop = 1;
-        Optional<PowerState> powerLoop = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Loop")).findAny();
+        int loopPowerAmount = 0;
+        Optional<PowerState> powerLoop = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Loop")).findAny();
         if (powerLoop.isPresent()) {
-            loop += powerLoop.get().amount;
+            loopPowerAmount = powerLoop.get().amount;
         }
 		
-		int focus = 0;
-        Optional<PowerState> powerFocus = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Focus")).findAny();
+		int focusAmount = 0;
+        Optional<PowerState> powerFocus = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Focus")).findAny();
         if (powerFocus.isPresent()) {
-            focus += powerFocus.get().amount;
+            focusAmount += powerFocus.get().amount;
         }
         
         // Check for Electrodynamics
-        int electro = 0;
-        Optional<PowerState> powerElectro = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Electro")).findAny();
+        int hasElectro = 0;
+        Optional<PowerState> powerElectro = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Electro")).findAny();
         if (powerElectro.isPresent()) {
-            electro = 1;
+            hasElectro = 1;
         }
 		
-		Optional<RelicState> relicCables = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(GoldPlatedCables.ID)).findAny();
+        int hasCables = 0;
+		Optional<RelicState> relicCables = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(GoldPlatedCables.ID)).findAny();
         if (relicCables.isPresent()) {
-            loop += 1;
+            hasCables = 1;
         }
 		
-        int Chip = 0;
-		Optional<RelicState> relicEmotionChip = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(EmotionChip.ID)).findAny();
+        int hasEmotionChip = 0;
+		Optional<RelicState> relicEmotionChip = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(EmotionChip.ID)).findAny();
         if (relicEmotionChip.isPresent()) {
 			if (relicEmotionChip.get().pulse) {
-				Chip = 1;
+				hasEmotionChip = 1;
 			}
         }
 		
-        int FrozenC = 0;
-		Optional<RelicState> relicFrozenCore = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(FrozenCore.ID)).findAny();
+        int hasFrozenCore = 0;
+		Optional<RelicState> relicFrozenCore = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(FrozenCore.ID)).findAny();
         if (relicFrozenCore.isPresent()) {
-			FrozenC = 1;
+			hasFrozenCore = 1;
         }
 		
-		int lightning_damage_per_orb = 0;
-		int guaranteed_lightning_instances = 0;
+		int baseDamagePerLighing = 0;
+		int electroLightningInstances = 0;
 
         int orbScore = 0;
-        for (int iOrb = 0; iOrb < turnNode.startingState.saveState.playerState.orbs.size(); iOrb++) {
-            OrbState orb = turnNode.startingState.saveState.playerState.orbs.get(iOrb);
-            int current_orbScore = 0;
+        for (int iOrb = 0; iOrb < saveState.playerState.orbs.size(); iOrb++) {
+            OrbState orb = saveState.playerState.orbs.get(iOrb);
+            int currentOrbScore = 0;
 			
-			int current_loop = 1;
-			if (iOrb == 0) {
-				current_loop = loop;
+			int currentLoop = 1;
+			
+			if (iOrb == 0 && hasCables == 1) {
+				currentLoop += 1;
 			}
 			
-			if (Chip == 1) {
-				current_loop += 1;
+			if (iOrb == 0 && loopPowerAmount >= 1) {
+				currentLoop += loopPowerAmount;
+			}
+			
+			if (hasEmotionChip == 1) {
+				currentLoop += 1;
 			}
 			
 			// Todo: Chip and Loop only work on next turn, so maybe don't count their damage now
             
             if (orb instanceof LightningOrbState) {
                 // Add score based on lightning orb damage
-				if (electro == 0) {
-					current_orbScore += orb.passiveAmount;
+				if (hasElectro == 0) {
+					currentOrbScore += orb.passiveAmount;
 				} else {
-					current_orbScore += 1;
-					lightning_damage_per_orb = orb.passiveAmount;
-					guaranteed_lightning_instances += loop;
+					currentOrbScore += 1;
+					baseDamagePerLighing = orb.passiveAmount;
+					electroLightningInstances += currentLoop;
 				}
                 
             } else if (orb instanceof FrostOrbState) {
                 // Add score based on frost orb block
-                current_orbScore += orb.passiveAmount * current_loop;
+                currentOrbScore += orb.passiveAmount * currentLoop;
                 
             } else if (orb instanceof DarkOrbState) {
                 // Add score based on dark orb damage
-                current_orbScore += Math.min(0, (orb.evokeAmount - orb.passiveAmount));
-				current_orbScore += orb.passiveAmount * current_loop;
+                currentOrbScore += Math.min(0, (orb.evokeAmount - orb.passiveAmount));
+				currentOrbScore += orb.passiveAmount * currentLoop;
                 
             } else if (orb instanceof PlasmaOrbState) {
                 // Add score for plasma orb
-                current_orbScore += energyValue * current_loop;
+                currentOrbScore += energyValue * currentLoop;
 				
             } else if (orb instanceof EmptyOrbSlotState) {
-				if (FrozenC == 1) {
-					FrozenC = 0;
-					current_orbScore += Math.max(0, (2+focus)) * current_loop;
+				if (hasFrozenCore == 1) {
+					hasFrozenCore = 0;
+					currentOrbScore += Math.max(0, (2+focusAmount)) * currentLoop;
 				} else {
-					current_orbScore = 0;
+					currentOrbScore = 0;
 				}
             }
             
-            if (current_orbScore == 0) {
-                // If orb slot is empty remove all score added by it (this makes capacitor unplayable when you have no orbs, not the best approach)
-                current_orbScore -= 5;
+            if (currentOrbScore == 0) {
+                // Todo: If orb slot is empty remove all score added by it (this makes capacitor unplayable when you have no orbs, not the best approach)
+                currentOrbScore -= 5;
             }
             
-            orbScore += current_orbScore;
+            orbScore += currentOrbScore;
         }
 		
 		
 		int damageOmega = 0;
-		Optional<PowerState> powerOmegaPower = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("OmegaPower")).findAny();
+		Optional<PowerState> powerOmegaPower = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("OmegaPower")).findAny();
         if (powerOmegaPower.isPresent()) {
             damageOmega += powerOmegaPower.get().amount;
         }
 		int damageCombust = 0;
-		Optional<PowerState> powerCombust = turnNode.startingState.saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Combust")).findAny();
+		Optional<PowerState> powerCombust = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Combust")).findAny();
         if (powerCombust.isPresent()) {
             damageCombust += powerCombust.get().amount;
         }
 		int damageCalendar = 0;
-        Optional<RelicState> relicStoneCalendar = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(StoneCalendar.ID) && relic.counter == 7).findAny();
+        Optional<RelicState> relicStoneCalendar = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(StoneCalendar.ID) && relic.counter == 7).findAny();
         if (relicStoneCalendar.isPresent()) {
             damageCalendar += 52;
         }
-        
-        // Todo: bomb
 		
-        int monster_count = 0;
-		int monster_total_health = 0;
-		int monster_preview_health_leftover = 0;
-        int poison_count = 0;
-        for (MonsterState monster : turnNode.startingState.saveState.curMapNodeState.monsterData) {
-			int count_add = 0;
+        int monsterTotalCount = 0;
+		int monsterTotalHealth = 0;
+		int monsterPreviewHealthLeftover = 0;
+        int poisonCount = 0;
+        for (MonsterState monster : saveState.curMapNodeState.monsterData) {
 			
             if (!monster.isDying && !monster.isEscaping && !monster.halfDead && monster.currentHealth >= 1) {
-                count_add = 1;
-				int current_poison_count = 0;
+                monsterTotalCount++;
 				
-                monster_total_health += monster.currentHealth;
+				int currentPoisonCount = 0;
 				
-				int max_damage_monster_can_take = monster.currentHealth;
-				int max_damage_per_instance = monster.maxHealth;
+				int currentHealth = monster.currentHealth;
+				int currentBlock = monster.currentBlock;
+				int maxHealth = monster.maxHealth;
 				
-				int preview_damage = 0;
+				Optional<PowerState> powerRegenerate = monster.powers.stream().filter(powerState -> powerState.powerId.equals(RegenerateMonsterPower.POWER_ID)).findAny();
+                if (powerRegenerate.isPresent()) {
+					int regenAmount = powerRegenerate.get().amount;
+					currentHealth += regenAmount;
+					if (currentHealth > maxHealth) {
+						currentHealth = maxHealth;
+					}
+                }
 				
+                monsterTotalHealth += currentHealth;
+				
+				int maxHealthCanLose = currentHealth;
+				int maxDamageCanTake = currentHealth;
+				
+				int previewDamageInstances = 0;
+				int previewDamageToMonster = 0;
+				
+				int previewHealthLossInstances = 0;
+				int previewHealthLossToMonster = 0;
+				
+				int canKill = 0;
+				
+				int hasIntangible = 0;
 				Optional<PowerState> powerIntangible = monster.powers.stream().filter(powerState -> powerState.powerId.equals("Intangible")).findAny();
                 if (powerIntangible.isPresent()) {
-					max_damage_per_instance = 1;
+					hasIntangible = 1;
                 }
 				
 				Optional<PowerState> powerInvincible = monster.powers.stream().filter(powerState -> powerState.powerId.equals("Invincible")).findAny();
                 if (powerInvincible.isPresent()) {
-					max_damage_monster_can_take = Math.min(monster.currentHealth, powerInvincible.get().amount);
+					maxHealthCanLose = Math.min(currentHealth, powerInvincible.get().amount);
+					maxDamageCanTake = maxHealthCanLose;
                 }
 				
+				if (maxHealthCanLose == currentHealth) {
+					canKill = 1;
+				}
+				
 				if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Barricade"))) {
-					if (monster.currentBlock >= 1) {
-						max_damage_monster_can_take += monster.currentBlock;
-						monster_total_health += monster.currentBlock;
+					if (currentBlock >= 1) {
+						maxDamageCanTake += currentBlock;
+						monsterTotalHealth += currentBlock;
 					}
+				}
+				
+				if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Unawakened"))) {
+					monsterTotalHealth += maxHealth;
 				}
 				
                 Optional<PowerState> powerPoison = monster.powers.stream().filter(powerState -> powerState.powerId.equals("Poison")).findAny();
                 if (powerPoison.isPresent()) {
-                    current_poison_count += Math.min(max_damage_monster_can_take, powerPoison.get().amount);
-					preview_damage += Math.min(max_damage_per_instance, current_poison_count);
+                    currentPoisonCount += Math.min(maxHealthCanLose, powerPoison.get().amount);
+					previewHealthLossToMonster += currentPoisonCount;
+					previewHealthLossInstances++;
                 }
+				poisonCount += currentPoisonCount;
 				
 				if (damageOmega >= 1) {
-					preview_damage += Math.min(max_damage_per_instance, damageOmega);
+					previewDamageToMonster += damageOmega;
+					previewDamageInstances++;
                 }
 				
 				if (damageCombust >= 1) {
-					preview_damage += Math.min(max_damage_per_instance, damageCombust);
+					previewDamageToMonster += damageCombust;
+					previewDamageInstances++;
                 }
 				
 				if (damageCalendar >= 1) {
-					preview_damage += Math.min(max_damage_per_instance, damageCalendar);
+					previewDamageToMonster += damageCalendar;
+					previewDamageInstances++;
                 }
 				
-				if (electro == 1 && guaranteed_lightning_instances >= 1) {
-					int base_dmg_per_lighing_orb_instance = lightning_damage_per_orb;
+				if (bombDamage >= 1) {
+					// Hack so we don't need to loop all powers again
+					previewDamageToMonster += bombDamage;
+					previewDamageInstances += bombInstances;
+                }
+				
+				if (electroLightningInstances >= 1) {
+					int damagePerLighing;
 					Optional<PowerState> powerLockon = monster.powers.stream().filter(powerState -> powerState.powerId.equals("Lockon")).findAny();
 					if (powerLockon.isPresent()) {
-						base_dmg_per_lighing_orb_instance = (int)(base_dmg_per_lighing_orb_instance * 1.5F);
+						damagePerLighing = (int)(baseDamagePerLighing * 1.5F);
+					} else {
+						damagePerLighing = baseDamagePerLighing;
 					}
-					int final_lighing_dmg_per_instance = Math.min(max_damage_per_instance, base_dmg_per_lighing_orb_instance);
-					final_lighing_dmg_per_instance *= guaranteed_lightning_instances;
-					orbScore += final_lighing_dmg_per_instance;
-					preview_damage += final_lighing_dmg_per_instance;
+					
+					previewDamageToMonster += damagePerLighing * electroLightningInstances;
+					previewDamageInstances += electroLightningInstances;
                 }
 				
-				if (preview_damage > max_damage_monster_can_take) {
-					preview_damage = max_damage_monster_can_take;
+				if (hasIntangible == 1) {
+					if (previewDamageToMonster >= 1) {
+						previewDamageToMonster = previewDamageInstances;
+					}
+					if (previewHealthLossToMonster >= 1) {
+						previewHealthLossToMonster = previewHealthLossInstances;
+					}
 				}
 				
-				int preview_health_leftover = monster.currentHealth - preview_damage;
+				if (previewHealthLossToMonster >= 1) {
+					if (previewHealthLossToMonster > maxHealthCanLose) {
+						previewHealthLossToMonster = maxHealthCanLose;
+					}
+					
+					if (previewHealthLossToMonster == maxHealthCanLose && canKill == 1) {
+						continue;
+					} else {
+						maxDamageCanTake -= previewHealthLossToMonster;
+					}
+				}
 				
-				monster_preview_health_leftover += preview_health_leftover;
-				poison_count += current_poison_count;
-            }
+				if (previewDamageToMonster >= 1) {
+					if (previewDamageToMonster > maxDamageCanTake) {
+						previewDamageToMonster = maxDamageCanTake;
+					}
+					
+					if (previewDamageToMonster == maxDamageCanTake && canKill == 1) {
+						continue;
+					} else {
+						maxDamageCanTake -= previewDamageToMonster;
+					}
+				}
+				
+				monsterPreviewHealthLeftover += maxDamageCanTake;
 			
-			if (monster.powers.stream().anyMatch(power -> power.powerId.equals("Unawakened"))) {
-				count_add = 1;
-                monster_total_health += monster.maxHealth;
+            } else if (monster.halfDead) {
+				monsterTotalCount++;
+				
+				if (monster.id.equals("AwakenedOne")) {
+					monsterTotalHealth += monster.maxHealth;
+					
+				} else if (monster.id.equals("Darkling")) {
+					monsterTotalHealth += (int)(monster.maxHealth * 0.5F);
+				}
 			}
 			
-			if (count_add == 1) {
-				monster_count++;
-			}
 			// Todo: add score for enemy debuffs (consider Paper krane and Odd mushroom)
 			// Todo: remove score for enemy buffs
-			// Todo: poison/pressurepoints bypasses block while attack dmg does not
 			// Idea: Prefer dealing damage to bosses instead of minions?
+			// Idea: Prefer dealing damage to monsters with corpse explosion
         }
-        //int poisonScore = poison_count;
+        //int poisonScore = poisonCount;
         int poisonScore = 0;
 		
-		turnNode.monsterTotalHealth = monster_total_health;
-		//int monsterHealthScore = monster_total_health * -1;
-		int monsterHealthScore = monster_preview_health_leftover * -1;
-        
-        // Todo: if Ice cream = add score for energy?
-        
-        // Todo: if Calipers | Blur | Barricade = add score for armor at the end of turn?
+		turnNode.monsterTotalHealth = monsterTotalHealth;
+		//int monsterHealthScore = monsterTotalHealth * -1;
+		int monsterHealthScore = monsterPreviewHealthLeftover * -1;
         
         // Todo: if Piramid | Equilibrium = add score for handsize at the end of turn?
         
@@ -788,35 +887,47 @@ public class ValueFunctions {
         
         // Idea: Maybe something to add score when reducing cards cost? (Madness/Mummyhand/Enlightenment/Setup/)
 		
-        int ritualDaggerScore = totalRitualDaggerDamage * fightMultiplier * healthMultiplier;
-        int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * fightMultiplier * healthMultiplier;
-        int feedScore = numFeeds * 4;
-        int lessonLearnedScore = numLessonLearned * 10 + turnNode.startingState.saveState.lessonLearnedCount * 10 * fightMultiplier * healthMultiplier;
+        int ritualDaggerScore = totalRitualDaggerDamage * ritualDaggerValue * totalMultiplier;
+        int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * GeneticAlgorithmValue * totalMultiplier;
+        int lessonLearnedScore = saveState.lessonLearnedCount * lessonLearnedValue * totalMultiplier;
+        lessonLearnedScore += numLessonLearned * 10;
         
-        int goldScore = 0;
-		Optional<RelicState> relicCourier = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Courier.ID)).findAny();
-        Optional<RelicState> relicMembershipCard = turnNode.startingState.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MembershipCard.ID)).findAny();
-		if (relicCourier.isPresent()) {
-            goldScore = MathUtils.round(turnNode.startingState.saveState.playerState.gold * 1.25F);
-        } else {
-			goldScore = turnNode.startingState.saveState.playerState.gold;
-		}
-		if (relicMembershipCard.isPresent()) {
-            goldScore *= 2;
-        }
-        goldScore *= 2 * fightMultiplier * healthMultiplier;
+		int feedScore = numFeeds * 4;
+		
+        int goldScore = getGoldScore(saveState);
+        goldScore *= goldValue * totalMultiplier;
 
-        int potionScore = getPotionScore(turnNode.startingState.saveState);
+        int potionScore = getPotionScore(saveState);
         
-        int relicScore = getRelicScoreInCombat(turnNode.startingState.saveState);
+        int relicScore = getRelicScoreInCombat(saveState);
 
         int additonalHeuristicScore =
                 BattleAiMod.additionalValueFunctions.stream()
                         .map(function -> function
-                                .apply(turnNode.startingState.saveState)).mapToInt(Integer::intValue).sum();
+                                .apply(saveState)).mapToInt(Integer::intValue).sum();
+		
+		int energyScore = 0;
+		Optional<RelicState> relicIceCream = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(IceCream.ID)).findAny();
+        if (relicIceCream.isPresent()) {
+			energyScore += saveState.playerState.energyPanelTotalEnergy * energyValue;
+        }
+		
+		int blockScore = 0;
+		Optional<PowerState> powerBarricade = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Barricade")).findAny();
+		Optional<PowerState> powerBlur = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Blur")).findAny();
+        if (powerBarricade.isPresent() || powerBlur.isPresent()) {
+            blockScore += saveState.playerState.currentBlock * blockValue;
+        } else {
+			Optional<RelicState> relicCalipers = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Calipers.ID)).findAny();
+			if (relicCalipers.isPresent()) {
+				blockScore += Math.min(0, (saveState.playerState.currentBlock - 15)) * blockValue;
+			}
+		}
 
         return numOrbScore +
                orbScore +
+			   energyScore +
+			   blockScore +
                poisonScore +
                clawScore +
                catalystScore +
@@ -831,6 +942,7 @@ public class ValueFunctions {
                goldScore +
                monsterHealthScore +
                playerCurrentHealthScore +
+			   previewHealingScore +
 			   playerMaxHealthScore +
                potionScore +
                relicScore +
@@ -842,11 +954,13 @@ public class ValueFunctions {
      * potions, and scaling effects matter here.
      */
     public static int getStateScore(StateNode node) {
+		
+		SaveState saveState = node.saveState;
         
         int totalRitualDaggerDamage = 0;
         int totalGeneticAlgorithmBlock = 0;
         
-        for (CardState card : node.saveState.playerState.hand) {
+        for (CardState card : saveState.playerState.hand) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -859,7 +973,7 @@ public class ValueFunctions {
             }
         }
 
-        for (CardState card : node.saveState.playerState.drawPile) {
+        for (CardState card : saveState.playerState.drawPile) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -872,7 +986,7 @@ public class ValueFunctions {
             }
         }
 
-        for (CardState card : node.saveState.playerState.discardPile) {
+        for (CardState card : saveState.playerState.discardPile) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -885,7 +999,7 @@ public class ValueFunctions {
             }
         }
 
-        for (CardState card : node.saveState.playerState.exhaustPile) {
+        for (CardState card : saveState.playerState.exhaustPile) {
             switch (StateFactories.cardIds[card.cardIdIndex]) {
                 case RitualDagger.ID:
                     totalRitualDaggerDamage += card.baseDamage;
@@ -899,35 +1013,24 @@ public class ValueFunctions {
         }
         
         // Idea: Maybe change the score value of each hp point based on max hp?
-        int healthMultiplier = 10;
-        int playerCurrentHealthScore = node.saveState.playerState.getCurrentHealth() * healthMultiplier;
-        int playerMaxHealthScore = node.saveState.playerState.maxHealth * 4 * healthMultiplier;
+        int playerCurrentHealthScore = saveState.playerState.getCurrentHealth() * healthMultiplier;
+        int playerMaxHealthScore = saveState.playerState.maxHealth * maxHealthValue * healthMultiplier;
 
-        int ritualDaggerScore = totalRitualDaggerDamage * healthMultiplier;
-        int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * healthMultiplier;
-        int lessonLearnedScore = node.saveState.lessonLearnedCount * 10 * healthMultiplier;
+        int ritualDaggerScore = totalRitualDaggerDamage * ritualDaggerValue * healthMultiplier;
+        int GeneticAlgorithmScore = totalGeneticAlgorithmBlock * GeneticAlgorithmValue * healthMultiplier;
+        int lessonLearnedScore = saveState.lessonLearnedCount * lessonLearnedValue * healthMultiplier;
         
-		int goldScore = 0;
-		Optional<RelicState> relicCourier = node.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Courier.ID)).findAny();
-        Optional<RelicState> relicMembershipCard = node.saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MembershipCard.ID)).findAny();
-		if (relicCourier.isPresent()) {
-            goldScore = MathUtils.round(node.saveState.playerState.gold * 1.25F);
-        } else {
-			goldScore = node.saveState.playerState.gold;
-		}
-		if (relicMembershipCard.isPresent()) {
-            goldScore *= 2;
-        }
-        goldScore *= 2 * healthMultiplier;
+		int goldScore = getGoldScore(saveState);
+        goldScore *= goldValue * healthMultiplier;
         
-        int potionScore = getPotionScore(node.saveState);
+        int potionScore = getPotionScore(saveState);
 		
-        int relicScore = getRelicScoreEndOfCombat(node.saveState);
+        int relicScore = getRelicScoreEndOfCombat(saveState);
         
         int additonalHeuristicScore =
                 BattleAiMod.additionalValueFunctions.stream()
                         .map(function -> function
-                                .apply(node.saveState)).mapToInt(Integer::intValue).sum();
+                                .apply(saveState)).mapToInt(Integer::intValue).sum();
         
         return ritualDaggerScore +
                GeneticAlgorithmScore +
@@ -941,7 +1044,8 @@ public class ValueFunctions {
     }
 
 	public static int getPotionScore(SaveState saveState) {
-		int healthMultiplier = 10;
+		
+		int playerMaxHealth = saveState.playerState.maxHealth;
 		
 		int hasBark = 0;
 		Optional<RelicState> relicSacredBark = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(SacredBark.ID)).findAny();
@@ -967,9 +1071,31 @@ public class ValueFunctions {
             hasSozu = 1;
         }
 		
+		int hasMarkOfTheBloom = 0;
+		Optional<RelicState> relicMarkOfTheBloom = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MarkOfTheBloom.ID)).findAny();
+        if (relicMarkOfTheBloom.isPresent()) {
+            hasMarkOfTheBloom = 1;
+        }
+		
+		int hasMagicFlower = 0;
+		Optional<RelicState> relicMagicFlower = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MagicFlower.ID)).findAny();
+		if (relicMagicFlower.isPresent()) {
+			hasMagicFlower = 1;
+		}
+		
+		int toyScore = 0;
+		if (hasToy == 1 && hasMarkOfTheBloom == 0) {
+			if (hasMagicFlower == 1) {
+				toyScore = healthMultiplier * 8;
+			} else {
+				toyScore = healthMultiplier * 5;
+			}
+		}
+		
 		int potionScore = 0;
 	    for (int iPotion = 0; iPotion < saveState.playerState.potions.size(); iPotion++) {
             PotionState potion = saveState.playerState.potions.get(iPotion);
+			
 			if (potion.potionId.equals("Potion Slot")) {
 				// Get score for one empty potion slot if we have WhiteBeast
 				if (hasWhiteBeast == 1 && hasSozu == 0) {
@@ -982,20 +1108,75 @@ public class ValueFunctions {
 				}
                 continue;
             }
+			
+			// Negative value for unknown and unplayable potions to discard them
 			if (!POTION_VALUES.containsKey(potion.potionId) || PotionState.UNPLAYABLE_POTIONS.contains(potion.potionId)) {
-                continue;
-            }
-			if (hasBark == 1 && POTION_BARK_VALUES.containsKey(potion.potionId)) {
-				potionScore += POTION_BARK_VALUES.get(potion.potionId);
-			} else {
-				potionScore += POTION_VALUES.get(potion.potionId);
-			}
-			if (hasToy == 1) {
-				potionScore += healthMultiplier * 5;
+                potionScore -= 1000;
+				
+            } else {
+			
+				if (potion.potionId.equals(FairyPotion.POTION_ID)) {
+					if (hasMarkOfTheBloom == 1) {
+						potionScore -= 1000;
+					} else {
+						int healAmt = getPotionHealing(playerMaxHealth, 30, hasBark, hasMagicFlower);
+						potionScore += (300 + (healAmt * healthMultiplier));
+					}
+					
+				} else if (potion.potionId.equals(BloodPotion.POTION_ID)) {
+					if (hasMarkOfTheBloom == 1) {
+						potionScore -= 1000;
+					} else {
+						int healAmt = getPotionHealing(playerMaxHealth, 20, hasBark, hasMagicFlower);
+						potionScore += (healAmt * healthMultiplier);
+					}
+					
+				} else if (potion.potionId.equals(RegenPotion.POTION_ID) && hasMarkOfTheBloom == 1) {
+					potionScore -= 1000;
+					
+				} else if (hasBark == 1 && POTION_BARK_VALUES.containsKey(potion.potionId)) {
+					potionScore += POTION_BARK_VALUES.get(potion.potionId);
+					
+				} else {
+					potionScore += POTION_VALUES.get(potion.potionId);
+				}
+				
+				potionScore += toyScore;
 			}
 		}
 		
 		return potionScore;
+	}
+	
+	public static int getGoldScore(SaveState saveState) {
+		int goldScore = 0;
+		Optional<RelicState> relicCourier = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Courier.ID)).findAny();
+        Optional<RelicState> relicMembershipCard = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MembershipCard.ID)).findAny();
+		if (relicCourier.isPresent()) {
+            goldScore = MathUtils.round(saveState.playerState.gold * 1.25F);
+        } else {
+			goldScore = saveState.playerState.gold;
+		}
+		if (relicMembershipCard.isPresent()) {
+            goldScore *= 2;
+        }
+		return goldScore;
+	}
+	
+	public static int getPotionHealing(int playerMaxHealth, int potency, int hasBark, int hasMagicFlower) {
+		int modPotency = potency;
+		if (hasBark == 1) {
+			modPotency *= 2;
+		}
+		float percent = modPotency / 100.0F;
+		int baseHealAmt = (int)(playerMaxHealth * percent);
+		int healAmt;
+		if (hasMagicFlower == 1) {
+			healAmt = MathUtils.round(baseHealAmt * 1.5F);
+		} else {
+			healAmt = baseHealAmt;
+		}
+		return healAmt;
 	}
 
     public static int getRelicScoreEndOfCombat(SaveState saveState) {
