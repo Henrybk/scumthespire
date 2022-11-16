@@ -32,6 +32,7 @@ import savestate.relics.RelicState;
 import savestate.powers.PowerState;
 import savestate.powers.powerstates.common.TheBombPowerState;
 import savestate.monsters.MonsterState;
+import savestate.monsters.exordium.*;
 
 import java.util.HashMap;
 import java.util.Optional;
@@ -48,7 +49,7 @@ public class ValueFunctions {
 	public static int energyValue = 10;
 	public static int blockValue = 1;
 	
-	// How many health points in each of these worth
+	// How many health points is each of these worth
 	public static int goldValue = 2;
 	public static int maxHealthValue = 4;
 	public static int lessonLearnedValue = 10;
@@ -274,6 +275,20 @@ public class ValueFunctions {
 		int playerMaxHealth = saveState.playerState.maxHealth;
 		int playerMissingHealth = playerMaxHealth - playerHealth;
 		
+		int areaDamageTotal = 0;
+		int areaDamageInstances = 0;
+		
+		int monsterTotalCount = 0;
+        int monsterAliveCount = 0;
+		for (MonsterState monster : saveState.curMapNodeState.monsterData) {
+            if (!monster.halfDead && !monster.isDying && !monster.isEscaping) {
+                monsterTotalCount++;
+                monsterAliveCount++;
+            } else if (monster.halfDead) {
+				monsterTotalCount++;
+			}
+        }
+		
 		int hasEctoplasm = 0;
 		Optional<RelicState> relicEctoplasm = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Ectoplasm.ID)).findAny();
         if (relicEctoplasm.isPresent()) {
@@ -406,8 +421,6 @@ public class ValueFunctions {
 		
         int playerMaxHealthScore = playerMaxHealth * maxHealthValue * totalMultiplier;
 		
-        int bombDamage = 0;
-		int bombInstances = 0;
 		int powerScore = 0;
 		for (int iPower = 0; iPower < saveState.playerState.powers.size(); iPower++) {
             PowerState power = saveState.playerState.powers.get(iPower);
@@ -420,8 +433,8 @@ public class ValueFunctions {
 				
 				powerScore += (int)(bombpower.damage * 0.2F);
 				if (bombpower.amount == 1) {
-					bombInstances++;
-					bombDamage += bombpower.damage;
+					areaDamageTotal += bombpower.damage;
+					areaDamageInstances++;
 				}
 			}
 		}
@@ -607,7 +620,7 @@ public class ValueFunctions {
         }
 		
 		int baseDamagePerLighing = 0;
-		int electroLightningInstances = 0;
+		int guaranteedLightningInstances = 0;
 
         int orbScore = 0;
         for (int iOrb = 0; iOrb < saveState.playerState.orbs.size(); iOrb++) {
@@ -632,12 +645,12 @@ public class ValueFunctions {
             
             if (orb instanceof LightningOrbState) {
                 // Add score based on lightning orb damage
-				if (hasElectro == 0) {
-					currentOrbScore += orb.passiveAmount;
-				} else {
+				if (hasElectro == 1 || monsterAliveCount <= 1) {
 					currentOrbScore += 1;
 					baseDamagePerLighing = orb.passiveAmount;
-					electroLightningInstances += currentLoop;
+					guaranteedLightningInstances += currentLoop;
+				} else {
+					currentOrbScore += orb.passiveAmount;
 				}
                 
             } else if (orb instanceof FrostOrbState) {
@@ -670,32 +683,31 @@ public class ValueFunctions {
             orbScore += currentOrbScore;
         }
 		
-		
-		int damageOmega = 0;
 		Optional<PowerState> powerOmegaPower = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("OmegaPower")).findAny();
         if (powerOmegaPower.isPresent()) {
-            damageOmega += powerOmegaPower.get().amount;
-        }
-		int damageCombust = 0;
-		Optional<PowerState> powerCombust = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Combust")).findAny();
-        if (powerCombust.isPresent()) {
-            damageCombust += powerCombust.get().amount;
-        }
-		int damageCalendar = 0;
-        Optional<RelicState> relicStoneCalendar = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(StoneCalendar.ID) && relic.counter == 7).findAny();
-        if (relicStoneCalendar.isPresent()) {
-            damageCalendar += 52;
+            areaDamageTotal += powerOmegaPower.get().amount;
+			areaDamageInstances++;
         }
 		
-        int monsterTotalCount = 0;
+		Optional<PowerState> powerCombust = saveState.playerState.powers.stream().filter(powerState -> powerState.powerId.equals("Combust")).findAny();
+        if (powerCombust.isPresent()) {
+            areaDamageTotal += powerCombust.get().amount;
+			areaDamageInstances++;
+        }
+		
+        Optional<RelicState> relicStoneCalendar = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(StoneCalendar.ID) && relic.counter == 7).findAny();
+        if (relicStoneCalendar.isPresent()) {
+            areaDamageTotal += 52;
+			areaDamageInstances++;
+        }
+		
 		int monsterTotalHealth = 0;
 		int monsterPreviewHealthLeftover = 0;
         int poisonCount = 0;
+		int monsterBuffScore = 0;
         for (MonsterState monster : saveState.curMapNodeState.monsterData) {
 			
-            if (!monster.isDying && !monster.isEscaping && !monster.halfDead && monster.currentHealth >= 1) {
-                monsterTotalCount++;
-				
+            if (!monster.halfDead && !monster.isDying && !monster.isEscaping) {
 				int currentPoisonCount = 0;
 				
 				int currentHealth = monster.currentHealth;
@@ -759,28 +771,12 @@ public class ValueFunctions {
                 }
 				poisonCount += currentPoisonCount;
 				
-				if (damageOmega >= 1) {
-					previewDamageToMonster += damageOmega;
-					previewDamageInstances++;
+				if (areaDamageTotal >= 1) {
+					previewDamageToMonster += areaDamageTotal;
+					previewDamageInstances += areaDamageInstances;
                 }
 				
-				if (damageCombust >= 1) {
-					previewDamageToMonster += damageCombust;
-					previewDamageInstances++;
-                }
-				
-				if (damageCalendar >= 1) {
-					previewDamageToMonster += damageCalendar;
-					previewDamageInstances++;
-                }
-				
-				if (bombDamage >= 1) {
-					// Hack so we don't need to loop all powers again
-					previewDamageToMonster += bombDamage;
-					previewDamageInstances += bombInstances;
-                }
-				
-				if (electroLightningInstances >= 1) {
+				if (guaranteedLightningInstances >= 1) {
 					int damagePerLighing;
 					Optional<PowerState> powerLockon = monster.powers.stream().filter(powerState -> powerState.powerId.equals("Lockon")).findAny();
 					if (powerLockon.isPresent()) {
@@ -789,8 +785,8 @@ public class ValueFunctions {
 						damagePerLighing = baseDamagePerLighing;
 					}
 					
-					previewDamageToMonster += damagePerLighing * electroLightningInstances;
-					previewDamageInstances += electroLightningInstances;
+					previewDamageToMonster += damagePerLighing * guaranteedLightningInstances;
+					previewDamageInstances += guaranteedLightningInstances;
                 }
 				
 				if (hasIntangible == 1) {
@@ -802,35 +798,87 @@ public class ValueFunctions {
 					}
 				}
 				
+				int willDie = 0;
+				
 				if (previewHealthLossToMonster >= 1) {
 					if (previewHealthLossToMonster > maxHealthCanLose) {
 						previewHealthLossToMonster = maxHealthCanLose;
 					}
 					
 					if (previewHealthLossToMonster == maxHealthCanLose && canKill == 1) {
-						continue;
+						willDie = 1;
 					} else {
 						maxDamageCanTake -= previewHealthLossToMonster;
 					}
 				}
 				
-				if (previewDamageToMonster >= 1) {
+				if (willDie == 0 && previewDamageToMonster >= 1) {
 					if (previewDamageToMonster > maxDamageCanTake) {
 						previewDamageToMonster = maxDamageCanTake;
 					}
 					
 					if (previewDamageToMonster == maxDamageCanTake && canKill == 1) {
-						continue;
+						willDie = 1;
 					} else {
 						maxDamageCanTake -= previewDamageToMonster;
 					}
 				}
 				
-				monsterPreviewHealthLeftover += maxDamageCanTake;
+				if (willDie == 1) {
+					monsterPreviewHealthLeftover += maxDamageCanTake;
+					continue;
+				}
+				
+				Optional<PowerState> monsterStrength = monster.powers.stream().filter(powerState -> powerState.powerId.equals(StrengthPower.POWER_ID)).findAny();
+                if (monsterStrength.isPresent()) {
+                    monsterBuffScore += monsterStrength.get().amount * -15;
+                }
+				
+				Optional<PowerState> monsterShackled = monster.powers.stream().filter(powerState -> powerState.powerId.equals(GainStrengthPower.POWER_ID)).findAny();
+                if (monsterShackled.isPresent()) {
+                    monsterBuffScore += monsterShackled.get().amount * -14;
+                }
+				
+				Optional<PowerState> monsterArtifact = monster.powers.stream().filter(powerState -> powerState.powerId.equals(ArtifactPower.POWER_ID)).findAny();
+                if (monsterArtifact.isPresent()) {
+                    monsterBuffScore += monsterArtifact.get().amount * -5;
+                }
+				
+				Optional<PowerState> monsterPlatedArmor = monster.powers.stream().filter(powerState -> powerState.powerId.equals(PlatedArmorPower.POWER_ID)).findAny();
+                if (monsterPlatedArmor.isPresent()) {
+                    monsterBuffScore += monsterPlatedArmor.get().amount * -3;
+                }
+				
+				Optional<PowerState> monsterWeak = monster.powers.stream().filter(powerState -> powerState.powerId.equals(WeakPower.POWER_ID)).findAny();
+                if (monsterWeak.isPresent()) {
+					Optional<RelicState> relicPaperCrane = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(PaperCrane.ID) && relic.counter == 7).findAny();
+					if (relicPaperCrane.isPresent()) {
+						monsterBuffScore += monsterWeak.get().amount * 4;
+					} else {
+						monsterBuffScore += monsterWeak.get().amount * 3;
+					}
+                }
+				
+				Optional<PowerState> monsterVulnerable = monster.powers.stream().filter(powerState -> powerState.powerId.equals(VulnerablePower.POWER_ID)).findAny();
+                if (monsterVulnerable.isPresent()) {
+                    Optional<RelicState> relicPaperFrog = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(PaperFrog.ID) && relic.counter == 7).findAny();
+					if (relicPaperFrog.isPresent()) {
+						monsterBuffScore += monsterVulnerable.get().amount * 4;
+					} else {
+						monsterBuffScore += monsterVulnerable.get().amount * 3;
+					}
+                }
+				
+				if (monster.id.equals("Lagavulin")) {
+					LagavulinState Laga = (LagavulinState) monster;
+					boolean isOutTriggered = Laga.isOutTriggered;
+					int idleCount = Laga.idleCount;
+					if (idleCount >= 2 || isOutTriggered) {
+						monsterBuffScore -= 100;
+					}
+				}
 			
             } else if (monster.halfDead) {
-				monsterTotalCount++;
-				
 				if (monster.id.equals("AwakenedOne")) {
 					monsterTotalHealth += monster.maxHealth;
 					
@@ -839,8 +887,6 @@ public class ValueFunctions {
 				}
 			}
 			
-			// Todo: add score for enemy debuffs (consider Paper krane and Odd mushroom)
-			// Todo: remove score for enemy buffs
 			// Idea: Prefer dealing damage to bosses instead of minions?
 			// Idea: Prefer dealing damage to monsters with corpse explosion
         }
@@ -929,6 +975,7 @@ public class ValueFunctions {
 			   energyScore +
 			   blockScore +
                poisonScore +
+			   monsterBuffScore +
                clawScore +
                catalystScore +
                parasiteScore +
@@ -1149,7 +1196,7 @@ public class ValueFunctions {
 	}
 	
 	public static int getGoldScore(SaveState saveState) {
-		int goldScore = 0;
+		int goldScore;
 		Optional<RelicState> relicCourier = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(Courier.ID)).findAny();
         Optional<RelicState> relicMembershipCard = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(MembershipCard.ID)).findAny();
 		if (relicCourier.isPresent()) {
