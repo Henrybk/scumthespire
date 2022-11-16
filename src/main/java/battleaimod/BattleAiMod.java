@@ -68,7 +68,10 @@ public class BattleAiMod implements PostInitializeSubscriber, PostUpdateSubscrib
     public final static long MESSAGE_TIME_MILLIS = 1500L;
     private static final int SERVER_GAME_PORT = 5124;
 
+    public static final int debugPrints = 1;
+
     public static String steveMessage = null;
+    public static String steveDead = null;
 
     public static boolean forceStep = false;
     public static AiServer aiServer = null;
@@ -229,14 +232,24 @@ public class BattleAiMod implements PostInitializeSubscriber, PostUpdateSubscrib
 
     @Override
     public void receivePostUpdate() {
-        if (steveMessage != null) {
+        if (steveDead != null) {
+            String messageToDisplay = " Dead: " + steveDead;
+            steveMessage = null;
+            steveDead = null;
+
+            AbstractDungeon.effectList
+                    .add(new ThoughtBubble(AbstractDungeon.player.dialogX, AbstractDungeon.player.dialogY, (float) MESSAGE_TIME_MILLIS / 1000.F, messageToDisplay, true));
+
+        } else if (steveMessage != null) {
             String messageToDisplay = " Processing... NL " + steveMessage;
             steveMessage = null;
+            steveDead = null;
 
             AbstractDungeon.effectList
                     .add(new ThoughtBubble(AbstractDungeon.player.dialogX, AbstractDungeon.player.dialogY, (float) MESSAGE_TIME_MILLIS / 1000.F, messageToDisplay, true));
 
         }
+        
         if (battleAiController == null && shouldStartAiFromServer) {
             shouldStartAiFromServer = false;
             controller = battleAiController = new BattleAiController(saveState, requestedTurnNum);

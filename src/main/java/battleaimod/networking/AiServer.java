@@ -160,6 +160,17 @@ public class AiServer {
                             jsonToSend.addProperty("type", commandListString);
                             jsonToSend.add("commands", commands);
 
+                            if (BattleAiMod.debugPrints == 1) {
+                                if (BattleAiMod.battleAiController.deathNode != null) {
+                                    jsonToSend.addProperty("dead", "Yes");
+                                } else {
+                                    int HPleft = BattleAiMod.battleAiController.bestEnd.saveState.playerState.getCurrentHealth();
+                                    int score = BattleAiMod.battleAiController.bestEnd.stateScore;
+                                    String messageToDisplay = " No NL HP: " + HPleft + " NL  Score: " + score;
+                                    jsonToSend.addProperty("dead", messageToDisplay);
+                                }
+                            }
+
                             if (commandFileName != null) {
                                 try {
                                     Path parent = Paths.get(commandFileName).getParent();

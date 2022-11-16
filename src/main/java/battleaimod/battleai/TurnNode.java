@@ -75,8 +75,7 @@ public class TurnNode implements Comparable<TurnNode> {
             curState.saveState = new SaveState();
 
             // Try to die as late as possible
-            if (controller.deathNode == null ||
-                    controller.deathNode.saveState.turn < curState.saveState.turn) {
+            if (controller.deathNode == null || controller.deathNode.saveState.turn < curState.saveState.turn) {
                 controller.deathNode = curState;
             }
         }

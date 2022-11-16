@@ -128,6 +128,9 @@ public class AiClient {
                         if (parsed.has("message")) {
                             BattleAiMod.steveMessage = parsed.get("message").getAsString();
                         }
+						if (parsed.has("dead")) {
+                            BattleAiMod.steveDead = parsed.get("dead").getAsString();
+                        }
 
                     } catch (Exception e) {
                         // Not a json string

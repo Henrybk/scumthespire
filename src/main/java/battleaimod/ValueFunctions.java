@@ -633,15 +633,14 @@ public class ValueFunctions {
 				currentLoop += 1;
 			}
 			
+			// Todo: Chip and Loop only work on next turn, so maybe don't count their damage now
 			if (iOrb == 0 && loopPowerAmount >= 1) {
-				currentLoop += loopPowerAmount;
+				//currentLoop += loopPowerAmount;
 			}
 			
 			if (hasEmotionChip == 1) {
-				currentLoop += 1;
+				//currentLoop += 1;
 			}
-			
-			// Todo: Chip and Loop only work on next turn, so maybe don't count their damage now
             
             if (orb instanceof LightningOrbState) {
                 // Add score based on lightning orb damage
@@ -825,9 +824,10 @@ public class ValueFunctions {
 				}
 				
 				if (willDie == 1) {
-					monsterPreviewHealthLeftover += maxDamageCanTake;
 					continue;
 				}
+				
+				monsterPreviewHealthLeftover += maxDamageCanTake;
 				
 				Optional<PowerState> monsterStrength = monster.powers.stream().filter(powerState -> powerState.powerId.equals(StrengthPower.POWER_ID)).findAny();
                 if (monsterStrength.isPresent()) {
@@ -946,11 +946,6 @@ public class ValueFunctions {
         int potionScore = getPotionScore(saveState);
         
         int relicScore = getRelicScoreInCombat(saveState);
-
-        int additonalHeuristicScore =
-                BattleAiMod.additionalValueFunctions.stream()
-                        .map(function -> function
-                                .apply(saveState)).mapToInt(Integer::intValue).sum();
 		
 		int energyScore = 0;
 		Optional<RelicState> relicIceCream = saveState.playerState.relics.stream().filter(relic -> relic.relicId.equals(IceCream.ID)).findAny();
@@ -992,8 +987,7 @@ public class ValueFunctions {
 			   previewHealingScore +
 			   playerMaxHealthScore +
                potionScore +
-               relicScore +
-               additonalHeuristicScore;
+               relicScore;
     }
 
     /**
@@ -1074,11 +1068,6 @@ public class ValueFunctions {
 		
         int relicScore = getRelicScoreEndOfCombat(saveState);
         
-        int additonalHeuristicScore =
-                BattleAiMod.additionalValueFunctions.stream()
-                        .map(function -> function
-                                .apply(saveState)).mapToInt(Integer::intValue).sum();
-        
         return ritualDaggerScore +
                GeneticAlgorithmScore +
                lessonLearnedScore +
@@ -1086,8 +1075,7 @@ public class ValueFunctions {
                playerCurrentHealthScore +
 			   playerMaxHealthScore +
                potionScore +
-               relicScore +
-               additonalHeuristicScore;
+               relicScore;
     }
 
 	public static int getPotionScore(SaveState saveState) {
